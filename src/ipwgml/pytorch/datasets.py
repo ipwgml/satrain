@@ -9,10 +9,13 @@ The :class:`SPRTabular` will load data in tabular format while the
 """
 
 from datetime import datetime
+from functools import partial
+import gc
 from math import ceil
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+import tracemalloc
 
 import numpy as np
 import torch
@@ -97,7 +100,7 @@ class SPRTabular(Dataset):
 
         if retrieval_input is None:
             retrieval_input = ALL_INPUTS
-        self.retrieval_input = parse_retrieval_inputs(retrieval_input)
+        self.retrieval_input = np.array(parse_retrieval_inputs(retrieval_input))
 
         if target_config is None:
             target_config = TargetConfig()
@@ -325,7 +328,7 @@ class SPRSpatial:
 
         if retrieval_input is None:
             retrieval_input = ALL_INPUTS
-        self.retrieval_input = parse_retrieval_inputs(retrieval_input)
+        self.retrieval_input = np.array(parse_retrieval_inputs(retrieval_input))
 
         if target_config is None:
             target_config = TargetConfig()
@@ -361,6 +364,8 @@ class SPRSpatial:
         """
         seed = int.from_bytes(os.urandom(4), "big") + w_id
         self.rng = np.random.default_rng(seed)
+        tracemalloc.start()
+
 
     def check_consistency(self):
         """
@@ -405,25 +410,20 @@ class SPRSpatial:
             for name, arr in data.items():
                 input_data[name] = torch.tensor(arr.astype(np.float32))
 
+        del data
+
         if self.augment:
 
             flip_h = self.rng.random() > 0.5
             flip_v = self.rng.random() > 0.5
+            dims = tuple()
+            if flip_h:
+                dims = dims + (-2,)
+            if flip_v:
+                dims = dims + (-1,)
 
-            def transform(tensor: torch.Tensor) -> torch.Tensor:
-                """
-                Randomly flips a tensor along its two last dimensions.
-                """
-                dims = tuple()
-                if flip_h:
-                    dims = dims + (-2,)
-                if flip_v:
-                    dims = dims + (-1,)
-                tensor = torch.flip(tensor, dims=dims)
-                return tensor
-
-            input_data = apply(input_data, transform)
-            target = apply(target, transform)
+            input_data = apply(input_data, partial(torch.flip, dims=dims))
+            target = apply(target, partial(torch.flip, dims=dims))
 
         if self.stack:
             input_data = torch.cat(list(input_data.values()), axis=0)

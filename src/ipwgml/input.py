@@ -199,7 +199,7 @@ class PMW(InputConfig):
             nan: An optional float value that will be used to replace missing values
                 in the input data.
         """
-        self.channels = channels
+        self.channels = None if channels is None else np.array(channels)
         self.include_angles = include_angles
         self.normalize = normalize
         self.nan = nan

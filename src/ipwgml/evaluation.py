@@ -594,7 +594,7 @@ def evaluate_scene(
             input_data=input_data, batch_size=batch_size, retrieval_fn=retrieval_fn
         )
 
-    with xr.open_dataset(input_files.target_file_gridded) as target_data:
+    with xr.open_dataset(input_files.target_file_gridded, engine="h5netcdf") as target_data:
 
         scan_inds = target_data.scan_index
         pixel_inds = target_data.pixel_index
@@ -671,7 +671,7 @@ def evaluate_scene(
         ]
 
         results["surface_precip_ref"] = surface_precip_ref
-        for var in aux_vars:
+        for var in [var for var in aux_vars if var in target_data]:
             results[var] = target_data[var]
 
         if output_path is not None:
@@ -1340,8 +1340,13 @@ class Evaluator:
             order += list(results_b["algorithm"].data)
             results = xr.concat([results, results_b[vars]], dim="algorithm")
             colors = {ord: "grey" for ord in order}
+        else:
+            colors = {}
 
-        c_ind = 0
+        colors[name] = "C0"
+        order.append(name)
+
+        c_ind = 1
         results_o = []
         if other_results is not None:
             for other_name, res in other_results.items():
@@ -1353,6 +1358,7 @@ class Evaluator:
                 colors[other_name] = f"C{c_ind}"
                 c_ind += 1
             results = xr.concat([results] + results_o, dim="algorithm")
+
 
         results = xr.merge(results.values()).to_dataframe()
         results = results.reset_index()
@@ -1385,7 +1391,8 @@ class Evaluator:
                 data=res,
                 order=order,
                 palette=colors,
-                hue="algorithm"
+                hue="algorithm",
+                legend=False
             )
             ax.set_title(f"({chr(ord('a') + ind)}) {full_name}", loc="left")
             unit_str = f"[${unit}$]" if len(unit) > 0 else ""

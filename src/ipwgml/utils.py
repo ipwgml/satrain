@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
+import hdf5plugin
 import xarray as xr
 
 
