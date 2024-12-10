@@ -8,7 +8,6 @@ Provides functionality for tiling input data and assembling tiled results.
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
-import torch
 import xarray as xr
 
 
@@ -167,18 +166,17 @@ class DatasetTiler:
 
     def get_weights(
         self, row_ind: int, col_ind, like: Optional[np.ndarray] = None
-    ) -> Union[np.ndarray, torch.Tensor]:
+    ) -> np.ndarray:
         """
         Get weights to reassemble results.
 
         Args:
             row_ind: Row-index of the tile.
             col_ind: Column-index of the tile.
-            like: An optional numpy.ndarray or torch.Tensor. If it is a torch.Tensor, the weights
-                will use the same dtype and be created on the same device as the tensor.
+            like: An optional numpy.ndarray to infer the dtype of the results.
 
         Return:
-            Numpy array or torch tensor containing weights for the corresponding tile.
+            Numpy array  containing weights for the corresponding tile.
         """
         n_rows, n_cols = self.tile_size
         w_rows = np.ones((n_rows, n_cols))
@@ -279,8 +277,6 @@ class DatasetTiler:
         ds_row = self.tile_size[0] / res.shape[-2]
         ds_col = self.tile_size[1] / res.shape[-1]
         shape = res.shape[:-2] + (int(self.m / ds_row), int(self.n / ds_col))
-        if isinstance(res, torch.Tensor):
-            return torch.zeros(shape, dtype=res.dtype, device=res.device)
         return np.zeros(shape, dtype=res.dtype)
 
     def assemble_tile(self, row_index, col_index, results, results_t):
@@ -391,32 +387,3 @@ class DatasetTiler:
 
     def __repr__(self):
         return f"Tiler(tile_size={self.tile_size}, overlap={self.overlap})"
-
-
-def calculate_padding(tensor, multiple_of=32):
-    """
-    Calculate torch padding dimensions required to pad the input tensor
-    to a multiple of 32.
-
-    Args:
-        tensor: The tensor to pad.
-        multiple_of: Integer of which the spatial dimensions of 'tensor'
-            should be a multiple of.
-
-    Return
-        A tuple ``(p_l_n, p_r_n, p_l_m, p_r_m)`` containing the
-        left and right padding  for the second to last dimension
-        (``p_l_m, p_r_m``) and for the last dimension (``p_l_n, p_r_n``).
-    """
-    shape = tensor.shape
-
-    n = shape[-1]
-    d_n = ceil(n / multiple_of) * multiple_of - n
-    p_l_n = d_n // 2
-    p_r_n = d_n - p_l_n
-
-    m = shape[-2]
-    d_m = ceil(m / multiple_of) * multiple_of - m
-    p_l_m = d_m // 2
-    p_r_m = d_m - p_l_m
-    return (p_l_n, p_r_n, p_l_m, p_r_m)
