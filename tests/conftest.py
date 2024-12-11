@@ -70,10 +70,10 @@ def spr_gmi_evaluation(tmp_path_factory):
     Fixture to download satellite-precipitation retrieval evaluation data for GMI.
     """
     dest = tmp_path_factory.mktemp("ipwgml")
-    download_missing("spr/gmi/evaluation/gridded/gmi", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/gridded/ancillary", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/gridded/target", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/on_swath/gmi", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/on_swath/ancillary", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/on_swath/target", dest, base_url=TEST_URL)
+    download_missing("spr/gmi/evaluation/conus/gridded/gmi", dest, base_url=TEST_URL)
+    download_missing("spr/gmi/evaluation/conus/gridded/ancillary", dest, base_url=TEST_URL)
+    download_missing("spr/gmi/evaluation/conus/gridded/target", dest, base_url=TEST_URL)
+    download_missing("spr/gmi/evaluation/conus/on_swath/gmi", dest, base_url=TEST_URL)
+    download_missing("spr/gmi/evaluation/conus/on_swath/ancillary", dest, base_url=TEST_URL)
+    download_missing("spr/gmi/evaluation/conus/on_swath/target", dest, base_url=TEST_URL)
     return dest

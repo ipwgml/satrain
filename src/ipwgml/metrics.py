@@ -33,9 +33,9 @@ holds the metrics to track in its ``precip_quantification_metrics``,
 
 The metrics are used by the :class:`ipgml.evaluation.Evaluator` to
 """
-
 from multiprocessing import shared_memory, Lock, Manager
 from typing import Any, Dict, Optional, Tuple
+import warnings
 
 import numpy as np
 from scipy.ndimage import binary_erosion
@@ -669,7 +669,10 @@ class SpectralCoherence(QuantificationMetric):
             ns = 1 - (se / energy_target)
             mse = se / counts
             n = 0.5 * (bins[1:] + bins[:-1])
-            scales = 0.5 * (N - 1) * self.scale / n
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                scales = 0.5 * (N - 1) * self.scale / n
 
         inds = np.argsort(scales[1:])
         resolved = np.where(coherence[1:][inds] > np.sqrt(1 / 2))[0]

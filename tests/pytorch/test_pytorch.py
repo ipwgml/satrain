@@ -52,7 +52,12 @@ def test_evaluate_tabular(geometry, spr_gmi_evaluation, tmp_path):
     """
     retrieval_input = ["gmi", "ancillary"]
     evaluator = Evaluator(
-        "gmi", geometry, retrieval_input, ipwgml_path=spr_gmi_evaluation, download=False
+        "conus",
+        "gmi",
+        geometry,
+        retrieval_input,
+        ipwgml_path=spr_gmi_evaluation,
+        download=False
     )
 
     model = DummyRetrieval()
@@ -78,7 +83,12 @@ def test_evaluate_tabular(geometry, spr_gmi_evaluation, tmp_path):
     """
     retrieval_input = ["gmi", "ancillary"]
     evaluator = Evaluator(
-        "gmi", geometry, retrieval_input, ipwgml_path=spr_gmi_evaluation, download=False
+        "conus",
+        "gmi",
+        geometry,
+        retrieval_input,
+        ipwgml_path=spr_gmi_evaluation,
+        download=False
     )
 
     model = DummyRetrieval()

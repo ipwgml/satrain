@@ -40,7 +40,7 @@ def test_dataset_tiler(spr_gmi_evaluation):
     """
     Ensure that tiling of an xarray.Dataset produces tiles of the expected size.
     """
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "gridded"
+    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "gridded"
     files = list((ds_path / "target").glob("*.nc"))
     dataset = xr.load_dataset(files[0])
 
@@ -56,7 +56,7 @@ def test_dataset_tiler_calculate_weights(spr_gmi_evaluation):
     """
     Ensure that tiling an xarray.Dataset and reassembling the tiles reproduces the input data.
     """
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "on_swath"
+    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "on_swath"
     files = list((ds_path / "target").glob("*.nc"))
     dataset = xr.load_dataset(files[0])
     results = dataset.copy(deep=True)
@@ -96,7 +96,7 @@ def test_tiler_trivial(spr_gmi_evaluation):
     Ensure that tiler works even when tile size is None, i.e., the tile extends over the full
     spatial extent of the input data.
     """
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "gridded"
+    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "gridded"
     files = list((ds_path / "target").glob("*.nc"))
     dataset = xr.load_dataset(files[0])
     tiler = DatasetTiler(dataset, tile_size=None, overlap=64)

@@ -24,6 +24,7 @@ def test_find_files(spr_gmi_evaluation):
     Ensure that the evaluator find evaluation files.
     """
     evaluator = Evaluator(
+        "conus",
         "gmi",
         "on_swath",
         ["gmi", "ancillary"],
@@ -47,6 +48,7 @@ def test_load_input_data(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "target"
         / "target_20230701195312.nc"
@@ -56,6 +58,7 @@ def test_load_input_data(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "target"
         / "target_20230701195312.nc"
@@ -65,6 +68,7 @@ def test_load_input_data(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "gmi"
         / "gmi_20230701195312.nc"
@@ -74,6 +78,7 @@ def test_load_input_data(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "gmi"
         / "gmi_20230701195312.nc"
@@ -83,6 +88,7 @@ def test_load_input_data(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "ancillary"
         / "ancillary_20230701195312.nc"
@@ -92,6 +98,7 @@ def test_load_input_data(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "ancillary"
         / "ancillary_20230701195312.nc"
@@ -101,6 +108,7 @@ def test_load_input_data(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "target"
         / "target_20230701195312.nc"
@@ -153,6 +161,7 @@ def input_data_gridded(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "target"
         / "target_20230701195312.nc"
@@ -162,6 +171,7 @@ def input_data_gridded(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "target"
         / "target_20230701195312.nc"
@@ -171,6 +181,7 @@ def input_data_gridded(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "gmi"
         / "gmi_20230701195312.nc"
@@ -180,6 +191,7 @@ def input_data_gridded(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "gmi"
         / "gmi_20230701195312.nc"
@@ -189,6 +201,7 @@ def input_data_gridded(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "ancillary"
         / "ancillary_20230701195312.nc"
@@ -198,6 +211,7 @@ def input_data_gridded(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "ancillary"
         / "ancillary_20230701195312.nc"
@@ -207,6 +221,7 @@ def input_data_gridded(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "target"
         / "target_20230701195312.nc"
@@ -240,6 +255,7 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "target"
         / "target_20230701195312.nc"
@@ -249,6 +265,7 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "target"
         / "target_20230701195312.nc"
@@ -258,6 +275,7 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "gmi"
         / "gmi_20230701195312.nc"
@@ -267,6 +285,7 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "gmi"
         / "gmi_20230701195312.nc"
@@ -276,6 +295,7 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "ancillary"
         / "ancillary_20230701195312.nc"
@@ -285,6 +305,7 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "on_swath"
         / "ancillary"
         / "ancillary_20230701195312.nc"
@@ -294,6 +315,7 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "spr"
         / "gmi"
         / "evaluation"
+        / "conus"
         / "gridded"
         / "target"
         / "target_20230701195312.nc"
@@ -627,6 +649,7 @@ def test_evaluate_scene(geometry, spr_gmi_evaluation, tmp_path):
     precipitation and ensure that the resulting correlation coefficient is 1.
     """
     evaluator = Evaluator(
+        "conus",
         "gmi",
         geometry,
         ["gmi", "ancillary"],
@@ -676,6 +699,7 @@ def test_quantification_metrics(geometry, spr_gmi_evaluation, tmp_path):
     Test accessing and setting of quantification metrics.
     """
     evaluator = Evaluator(
+        "conus",
         "gmi",
         geometry,
         ["gmi", "ancillary"],
@@ -712,6 +736,7 @@ def test_evaluate(geometry, spr_gmi_evaluation, tmp_path):
     Test evaluation over all files.
     """
     evaluator = Evaluator(
+        "conus",
         "gmi",
         geometry,
         ["gmi", "ancillary"],
