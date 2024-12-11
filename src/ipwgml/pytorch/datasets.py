@@ -104,6 +104,8 @@ class SPRTabular(Dataset):
 
         if target_config is None:
             target_config = TargetConfig()
+        elif isinstance(target_config, dict):
+            target_config = TargetConfig(**target_config)
         self.target_config = target_config
 
         self.stack = stack
@@ -332,6 +334,8 @@ class SPRSpatial:
 
         if target_config is None:
             target_config = TargetConfig()
+        elif isinstance(target_config, dict):
+            target_config = TargetConfig(**target_config)
         self.target_config = target_config
 
         self.stack = stack

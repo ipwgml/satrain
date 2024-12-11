@@ -30,6 +30,7 @@ from math import trunc, ceil
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import h5netcdf
 import numpy as np
 import pandas as pd
 from rich.progress import Progress, track
@@ -38,6 +39,7 @@ import xarray as xr
 from ipwgml import baselines
 from ipwgml import config
 from ipwgml.data import download_missing
+from ipwgml.definitions import DOMAINS, ALL_INPUTS
 import ipwgml.logging
 import ipwgml.metrics
 from ipwgml.plotting import cmap_precip
@@ -274,7 +276,7 @@ def load_retrieval_input_data(
 
     # Load time from target file.
     target_file = input_files.get_path("target", geometry)
-    with xr.open_dataset(target_file) as target_data:
+    with xr.open_dataset(target_file, engine="h5netcdf") as target_data:
         input_data["time"] = (spatial_dims, target_data.time.data)
 
     for inpt in retrieval_input:
@@ -289,7 +291,7 @@ def load_retrieval_input_data(
                 input_data[name] = dims, arr
 
     anc_file = input_files.get_path("ancillary", geometry)
-    with xr.open_dataset(anc_file) as anc_data:
+    with xr.open_dataset(anc_file, engine="h5netcdf") as anc_data:
         for name, attr in anc_data.attrs.items():
             if name == "pmw_input_file":
                 input_data.attrs["gpm_input_file"] = attr
@@ -691,6 +693,7 @@ class Evaluator:
 
     def __init__(
         self,
+        domain: str,
         reference_sensor: str,
         geometry: str,
         retrieval_input: Optional[List[str | Dict[str, Any | InputConfig]]] = None,
@@ -700,6 +703,7 @@ class Evaluator:
     ):
         """
         Args:
+            domain: The domain over which to evaluate the retrieval.
             reference_sensor: The name of SPR reference sensor
             geometry: The geometry of  the retrieval. 'gridded' for retrievals operating on
                 the regridded input observations; 'on_swath' for retrievals operating on the
@@ -715,6 +719,12 @@ class Evaluator:
         else:
             ipwgml_path = Path(ipwgml_path)
 
+        if domain not in DOMAINS:
+            raise ValueError(
+                f"Domain must be one of {DOMAINS}."
+            )
+
+        self.domain = domain
         self.reference_sensor = reference_sensor
         self.geometry = geometry
 
@@ -749,7 +759,7 @@ class Evaluator:
         ]
         self._prob_heavy_precip_detection_metrics = [ipwgml.metrics.PRCurve()]
 
-        dataset = f"spr/{self.reference_sensor}/evaluation/{self.geometry}/"
+        dataset = f"spr/{self.reference_sensor}/evaluation/{self.domain}/{self.geometry}/"
         for inpt in self.retrieval_input:
             if download:
                 download_missing(
@@ -758,16 +768,16 @@ class Evaluator:
             files = sorted(list((ipwgml_path / dataset / inpt.name).glob("*.nc")))
             setattr(self, inpt.name + "_" + self.geometry, files)
 
-            if getattr(self, f"ancillary_{self.geometry}", None) is None:
-                if download:
-                    download_missing(
-                        dataset + "ancillary", ipwgml_path, progress_bar=True
-                    )
-                files = sorted(list((ipwgml_path / dataset / "ancillary").glob("*.nc")))
-                setattr(self, "ancillary" + "_" + self.geometry, files)
+        if getattr(self, f"ancillary_{self.geometry}", None) is None:
+            if download:
+                download_missing(
+                    dataset + "ancillary", ipwgml_path, progress_bar=True
+                )
+            files = sorted(list((ipwgml_path / dataset / "ancillary").glob("*.nc")))
+            setattr(self, "ancillary" + "_" + self.geometry, files)
 
         for geometry in ["gridded", "on_swath"]:
-            dataset = f"spr/{self.reference_sensor}/evaluation/{geometry}/"
+            dataset = f"spr/{self.reference_sensor}/evaluation/{self.domain}/{geometry}/"
             if download:
                 download_missing(dataset + "target", ipwgml_path, progress_bar=True)
             files = sorted(list((ipwgml_path / dataset / "target").glob("*.nc")))
@@ -1149,7 +1159,7 @@ class Evaluator:
                 reference_sensor.
         """
         try:
-            from ipwgml.plotting import add_ticks
+            from ipwgml.plotting import add_ticks, scale_bar
             import cartopy.crs as ccrs
             import matplotlib.pyplot as plt
             from matplotlib.colors import LogNorm
@@ -1175,7 +1185,7 @@ class Evaluator:
         median_time = fname.split("_")[-1][:-3]
         date = datetime.strptime(median_time, "%Y%m%d%H%M%S")
 
-        with xr.open_dataset(self.target_gridded[scene_index]) as target_data:
+        with xr.open_dataset(self.target_gridded[scene_index], engine="h5netcdf") as target_data:
             lons = target_data.longitude.data
             lats = target_data.latitude.data
             surface_precip_full = target_data.surface_precip.data
@@ -1183,6 +1193,13 @@ class Evaluator:
 
         sp_ret = results.surface_precip.data
         sp_ref = results.surface_precip_ref.data
+
+        valid_lats = np.isfinite(sp_ref).any(1)
+        lat_min = lats[valid_lats].min()
+        lat_max = lats[valid_lats].max()
+        valid_lons = np.isfinite(sp_ref).any(0)
+        lon_min = lons[valid_lons].min()
+        lon_max = lons[valid_lons].max()
 
         lon_ticks = np.arange(
             trunc(lons.min() // 5) * 5.0, ceil(lons.max() // 5) * 5 + 1.0, 5.0
@@ -1198,20 +1215,9 @@ class Evaluator:
 
         mask = np.isnan(sp_ref)
 
+        # Reference data
+
         ax = fig.add_subplot(gs[0, 0], projection=crs)
-        ax.pcolormesh(lons, lats, np.maximum(sp_ret, 1e-3), cmap=cmap_precip, norm=norm)
-        ax.contour(
-            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey"
-        )
-        ax.set_title("(a) Retrieved", loc="left")
-        add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
-        ax.coastlines()
-
-        if swath_boundaries:
-            pixel_inds = target_data.pixel_index
-            ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
-
-        ax = fig.add_subplot(gs[0, 1], projection=crs)
         m = ax.pcolormesh(
             lons,
             lats,
@@ -1219,7 +1225,6 @@ class Evaluator:
             cmap=cmap_precip,
             norm=norm,
         )
-
         cntr = ax.contour(
             lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey"
         )
@@ -1229,6 +1234,39 @@ class Evaluator:
         if swath_boundaries:
             pixel_inds = target_data.pixel_index
             ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
+        ax.set_xlim(lon_min, lon_max)
+        ax.set_ylim(lat_min, lat_max)
+
+        if lon_max - lon_min < 2.0:
+            sb_len = 50e3
+        elif lon_max - lon_min < 5.0:
+            sb_len = 100e3
+        elif lon_max - lon_min < 10.0:
+            sb_len = 200e3
+        elif lon_max - lon_min < 20.0:
+            sb_len = 500e3
+        else:
+            sb_len = 1000e3
+
+        scale_bar(ax, sb_len, border=0.1, height=0.018)
+
+        # Retrieved data
+
+        ax = fig.add_subplot(gs[0, 1], projection=crs)
+        ax.pcolormesh(lons, lats, np.maximum(sp_ret, 1e-3), cmap=cmap_precip, norm=norm)
+        ax.contour(
+            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey"
+        )
+        ax.set_title("(a) Retrieved", loc="left")
+        add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
+        ax.set_xlim(lon_min, lon_max)
+        ax.set_ylim(lat_min, lat_max)
+        ax.coastlines()
+
+        if swath_boundaries:
+            pixel_inds = target_data.pixel_index
+            ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
+
 
         fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"))
 

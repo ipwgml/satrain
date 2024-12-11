@@ -66,7 +66,7 @@ def test_download_files_spr_gmi_evaluation(spr_gmi_evaluation):
     """
     Ensure that fixture successfully downloaded files.
     """
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "gridded"
+    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "gridded"
     files = list((ds_path / "gmi").glob("*.nc"))
     assert len(files) == 1
     files = list((ds_path / "ancillary").glob("*.nc"))
@@ -76,7 +76,7 @@ def test_download_files_spr_gmi_evaluation(spr_gmi_evaluation):
     files = list((ds_path / "target").glob("*.nc"))
     assert len(files) == 1
 
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "on_swath"
+    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "on_swath"
     files = list((ds_path / "gmi").glob("*.nc"))
     assert len(files) == 1
     files = list((ds_path / "ancillary").glob("*.nc"))

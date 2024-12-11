@@ -50,7 +50,7 @@ Members
 from abc import ABC, abstractproperty
 from copy import copy
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Union
 
 import hdf5plugin
@@ -169,6 +169,16 @@ class InputConfig(ABC):
         """
         xarray.Dataset containing summary statistics for the input.
         """
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        .toml compatible dictionary representation of input config.
+        """
+        dct = asdict(self)
+        dct["name"] = self.name
+        return {
+            name: val for name, val in dct.items() if val is not None
+        }
 
     def __hash__(self):
         """

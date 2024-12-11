@@ -17,9 +17,9 @@ Members
 -------
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import xarray as xr
@@ -131,6 +131,15 @@ class TargetConfig:
                 gcf = data["gauge_correction_factor"].data
                 valid *= gcf <= self.min_gcf
         return ~valid
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        .toml compatible dictionary representation of input config.
+        """
+        dct = asdict(self)
+        return {
+            name: val for name, val in dct.items() if val is not None
+        }
 
     def load_reference_precip(self, target_data: Path | str | xr.Dataset) -> np.ndarray:
         """
