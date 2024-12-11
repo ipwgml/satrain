@@ -1,15 +1,14 @@
 # Getting started
 
-This section describes how to get started with the IPWG SPR benchmark dataset.
+The ipwgml Python package simplifies accessing and using the Satellite
+Precipitation Retrieval (SPR) benchmark dataset. While the full dataset can be
+downloaded from [here](https://rain.atmos.colostate.edu/gprof_nn/ipwgml/), the recommended way to obtain the data is through the ``ipwgml`` package.
 
-While all data is currently hosted
-[here](https://rain.atmos.colostate.edu/gprof_nn/ipwgml/) and can be downloaded
-and used completely independently, the ``ipwgml`` Python package provides
-functionality to make assessing and using the data easier.
 
 ## Installing the ``ipwgml`` package
 
-The currently recommended way to install the package from the GitHub repository:
+
+To install the latest version of ipwgml, use the following command:
 
 ```
 pip install ipwgml[complete]@git+https://github.com/simonpf/ipwgml
@@ -18,12 +17,17 @@ pip install ipwgml[complete]@git+https://github.com/simonpf/ipwgml
 > **Note**: The above command installs all dependencies required to run the examples included here. If
 this is a concern, use ``pip install git+https://github.com/simonpf/ipwgml`` for a minimal installation.
 
-After successful installation, the ``ipwgml`` command should be available from the command line.
 
-## Data download using the ``ipwgml`` command
+After installation, the ipwgml command should be available from the command line.
 
-The ``ipwgml`` command line interface provides a command to download all or parts of the SPR dataset.
+## Optional: Data download using the ``ipwgml`` command
 
+```{note}
+Most functionality of the ``ipwgml`` dataset that requires access to the SPR dataset will automatically download the required files. Therefore, the following steps are not
+strictly required to get started using the package.
+```
+
+Use the ipwgml command-line interface to download parts or all of the SPR dataset:
 
 ```
 ipwgml download --data_path /path/to/store/data --sensors gmi --splits training,validation,testing --geometries gridded --format spatial
@@ -39,9 +43,6 @@ This will download the gridded SPR training, validation, and testing data. The `
  - ``--formats`` A comma-separated list of the data formats to download. Available options are ``spatial`` for 2D
    training scenes and ``tabular`` for tabular data.
    
-```{note}
-While using the ``ipwgml`` command to download the data is one way to obtain the SPR dataset, all ``ipwgml`` functionality provides an option to automatically download required data. Therefore, a manual download is not strictly required if you intend to use the data solely through the ``ipwgml`` package.
-```
    
 ## Listing available files
 
