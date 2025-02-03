@@ -693,23 +693,23 @@ class Evaluator:
 
     def __init__(
         self,
-        domain: str,
         reference_sensor: str,
         geometry: str,
         retrieval_input: Optional[List[str | Dict[str, Any | InputConfig]]] = None,
+        domain: str = "conus",
         target_config=None,
         ipwgml_path: Optional[Path] = None,
         download: bool = True,
     ):
         """
         Args:
-            domain: The domain over which to evaluate the retrieval.
             reference_sensor: The name of SPR reference sensor
             geometry: The geometry of  the retrieval. 'gridded' for retrievals operating on
                 the regridded input observations; 'on_swath' for retrievals operating on the
                 nativ swath-based observations.
             retrieval_input: The retrieval inputs to load. Should be a subset of
                 ['gmi', 'mhs', 'ancillary', 'geo', 'geo_ir']
+            domain: The domain over which to evaluate the retrieval.
             ipwgml_path: An optional path to the location of the ipgml data.
             download: A boolean flag indicating whether or not to download the evaluation files
                  if they are not found in 'ipwgml_path'.
@@ -1307,7 +1307,7 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor)
+            results_b = baselines.load_baseline_results(self.reference_sensor, domain=self.domain)
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1373,7 +1373,7 @@ class Evaluator:
             units.append(results[var].attrs["unit"])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor)
+            results_b = baselines.load_baseline_results(self.reference_sensor, domain=self.domain)
             vars = list(results.variables.keys())
             order += list(results_b["algorithm"].data)
             results = xr.concat([results, results_b[vars]], dim="algorithm")
@@ -1471,7 +1471,7 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor)
+            results_b = baselines.load_baseline_results(self.reference_sensor, domain=self.domain)
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 

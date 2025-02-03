@@ -24,10 +24,10 @@ def test_find_files(spr_gmi_evaluation):
     Ensure that the evaluator find evaluation files.
     """
     evaluator = Evaluator(
-        "conus",
         "gmi",
         "on_swath",
         ["gmi", "ancillary"],
+        domain="conus",
         ipwgml_path=spr_gmi_evaluation,
         download=False,
     )
@@ -649,10 +649,10 @@ def test_evaluate_scene(geometry, spr_gmi_evaluation, tmp_path):
     precipitation and ensure that the resulting correlation coefficient is 1.
     """
     evaluator = Evaluator(
-        "conus",
         "gmi",
         geometry,
         ["gmi", "ancillary"],
+        domain="conus",
         ipwgml_path=spr_gmi_evaluation,
         download=False,
     )
@@ -699,10 +699,10 @@ def test_quantification_metrics(geometry, spr_gmi_evaluation, tmp_path):
     Test accessing and setting of quantification metrics.
     """
     evaluator = Evaluator(
-        "conus",
         "gmi",
         geometry,
         ["gmi", "ancillary"],
+        domain="conus",
         ipwgml_path=spr_gmi_evaluation,
         download=False,
     )
@@ -736,10 +736,10 @@ def test_evaluate(geometry, spr_gmi_evaluation, tmp_path):
     Test evaluation over all files.
     """
     evaluator = Evaluator(
-        "conus",
         "gmi",
         geometry,
         ["gmi", "ancillary"],
+        domain="conus",
         ipwgml_path=spr_gmi_evaluation,
         download=False,
     )

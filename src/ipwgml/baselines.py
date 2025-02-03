@@ -17,7 +17,9 @@ BASELINES_GMI = {
 
 
 def load_baseline_results(
-    reference_sensor: str, baselines: Optional[List[str]] = None
+    reference_sensor: str,
+    domain: str = "conus",
+    baselines: Optional[List[str]] = None,
 ) -> xr.Dataset:
     """
     Load baseline results.
@@ -44,7 +46,7 @@ def load_baseline_results(
         if baseline not in BASELINES:
             raise ValueError("Encountered unsupported baseline name '%s'.", baseline)
 
-        results.append(xr.load_dataset(data_path / (baseline + ".nc")))
+        results.append(xr.load_dataset(data_path / (baseline + f"_{domain}"+ ".nc")))
 
     results = xr.concat(results, dim="algorithm")
     results["algorithm"] = (("algorithm",), [BASELINES[name] for name in baselines])
