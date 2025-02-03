@@ -198,9 +198,9 @@ class DatasetTiler:
         if row_ind < self.n_rows_tiled - 1:
             trans_start = self.row_starts[row_ind + 1]
             if row_ind > 0:
-                trans_end_prev = self.row_starts[row_ind - 1] + self.tile_size[1]
+                trans_end_prev = self.row_starts[row_ind - 1] + self.tile_size[0]
                 trans_start = max(trans_start, trans_end_prev)
-            trans_end = self.row_starts[row_ind] + self.tile_size[1]
+            trans_end = self.row_starts[row_ind] + self.tile_size[0]
             l_trans = min(trans_end - trans_start, self.overlap)
 
             start = trans_start - self.row_starts[row_ind]

@@ -229,6 +229,7 @@ def download_dataset(
     ipwgml_path = config.get_data_path()
     dataset = f"spr/{reference_sensor}/{split}/{geometry}/{format}/"
 
+
     download_missing(
         dataset + "target",
         ipwgml_path,
@@ -239,8 +240,10 @@ def download_dataset(
         "target": [ipwgml_path / fle for fle in list_files(dataset + "target")]
     }
 
-    if isinstance(input_data, str):
+    if not isinstance(input_data, list):
         input_data = [input_data]
+    input_data = [inpt if isinstance(inpt, str) else inpt.name for inpt in input_data]
+
     for inpt in input_data:
         download_missing(dataset + inpt, ipwgml_path, progress_bar=True)
         paths[inpt] = list_files(dataset + inpt)
