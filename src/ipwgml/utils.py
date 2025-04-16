@@ -36,6 +36,8 @@ def open_if_required(path_or_dataset: str | Path | xr.Dataset) -> xr.Dataset:
     finally:
         if handle is not None:
             handle.close()
+        del path_or_dataset
+        del handle
 
 
 def get_median_time(path: Path) -> datetime:

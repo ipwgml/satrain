@@ -12,10 +12,12 @@ from datetime import datetime
 from functools import partial
 import gc
 from math import ceil
+import multiprocessing
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 import tracemalloc
+import sys
 
 import numpy as np
 import torch
@@ -328,9 +330,10 @@ class SPRSpatial:
             )
         self.split = split
 
+        self.manager = multiprocessing.Manager()
         if retrieval_input is None:
             retrieval_input = ALL_INPUTS
-        self.retrieval_input = np.array(parse_retrieval_inputs(retrieval_input))
+        self.retrieval_input = self.manager.list(parse_retrieval_inputs(retrieval_input))
 
         if target_config is None:
             target_config = TargetConfig()
@@ -352,12 +355,12 @@ class SPRSpatial:
             if download:
                 download_missing(dataset + inpt.name, ipwgml_path, progress_bar=True)
             files = sorted(list((ipwgml_path / dataset / inpt.name).glob("*.nc")))
-            setattr(self, inpt.name, np.array(files))
+            setattr(self, inpt.name, np.array([str(path) for path in files]))
 
         if download:
             download_missing(dataset + "target", ipwgml_path, progress_bar=True)
         files = sorted(list((ipwgml_path / dataset / "target").glob("*.nc")))
-        self.target = np.array(files)
+        self.target = np.array([str(path) for path in files])
 
         self.check_consistency()
         self.worker_init_fn(0)
@@ -368,7 +371,6 @@ class SPRSpatial:
         """
         seed = int.from_bytes(os.urandom(4), "big") + w_id
         self.rng = np.random.default_rng(seed)
-        tracemalloc.start()
 
 
     def check_consistency(self):
@@ -397,10 +399,12 @@ class SPRSpatial:
         """
         Load sample from dataset.
         """
-        with xr.open_dataset(self.target[ind]) as data:
-            target_time = data.time
+        with xr.load_dataset(self.target[ind]) as data:
+            target_time = data.time.data
             target = self.target_config.load_reference_precip(data)
             target = torch.tensor(target.astype(np.float32))
+        data.close()
+        del data
 
         input_data = {}
         for inpt in self.retrieval_input:
@@ -414,7 +418,8 @@ class SPRSpatial:
             for name, arr in data.items():
                 input_data[name] = torch.tensor(arr.astype(np.float32))
 
-        del data
+            del files
+            del data
 
         if self.augment:
 
@@ -428,8 +433,11 @@ class SPRSpatial:
 
             input_data = apply(input_data, partial(torch.flip, dims=dims))
             target = apply(target, partial(torch.flip, dims=dims))
+            del dims
 
         if self.stack:
             input_data = torch.cat(list(input_data.values()), axis=0)
+
+        del target_time
 
         return input_data, target

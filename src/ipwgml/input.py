@@ -253,13 +253,15 @@ class PMW(InputConfig):
             is 'True' the dictionary will also containg the earth-incidence angles with the
             key 'eia_<sensor_name>'.
         """
-        with open_if_required(pmw_data_file) as pmw_data:
-            pmw_data = pmw_data.compute()
-            pmw_data = pmw_data[["observations", "earth_incidence_angle"]].transpose("channel", ...)
-            if self.channels is not None:
-                pmw_data = pmw_data[{"channel": self.channels}]
-            else:
-                pmw_data = pmw_data[{"channel": slice(0, None)}]
+        if isinstance(pmw_data_file, xr.Dataset):
+            pmw_data = pmw_data_file
+        else:
+            pmw_data = xr.load_dataset(pmw_data_file)
+        pmw_data = pmw_data[["observations", "earth_incidence_angle"]].transpose("channel", ...)
+        if self.channels is not None:
+            pmw_data = pmw_data[{"channel": self.channels}]
+        else:
+            pmw_data = pmw_data[{"channel": slice(0, None)}]
 
         obs = pmw_data["observations"].data
         obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)

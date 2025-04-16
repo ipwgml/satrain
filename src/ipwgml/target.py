@@ -158,6 +158,7 @@ class TargetConfig:
             target = data[self.target].data.copy()
             invalid = self.get_mask(target_data)
             target[invalid] = np.nan
+        del data
         return target
 
     def load_precip_mask(self, target_data: Path | str | xr.Dataset) -> np.ndarray:
