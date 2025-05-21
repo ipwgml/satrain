@@ -21,11 +21,12 @@ from rich.progress import Progress
 
 from ipwgml.definitions import (
     ALL_INPUTS,
-    FORMATS,
     GEOMETRIES,
     REFERENCE_SENSORS,
+    SIZES,
     SPLITS,
 )
+from ipwgml.utils import get_median_time
 from ipwgml import config
 import ipwgml.logging
 
@@ -39,12 +40,27 @@ BASE_URL = "https://rain.atmos.colostate.edu/gprof_nn/ipwgml"
 FILE_REGEXP = re.compile('a href="([\w_]*\.nc)"')
 
 
-def list_files(relative_path: str, base_url: Optional[str] = None) -> List[str]:
+def list_files(
+        dataset_name: str,
+        reference_sensor: str,
+        geometry: str,
+        split: str,
+        subset: "xl",
+        domain: "conus",
+        base_url: Optional[str] = None) -> Dict[str, str]:
     """
     List files in dataset.
 
     Args:
-        relative_path: The relative path identifying the dataset.
+        dataset_name: The name of the dataset, i.e., 'spr' for the satellite
+            precipitation retrieval (SPR) dataset..
+        reference_sensor: The reference sensor ('gmi' or 'atms')
+        geometry: The viewing geometry ('on_swath', or 'gridded')
+        split: The name of the data split, i.e., 'training', 'validation',
+            'testing', or 'evaluation'
+        subset: The subset, i.e, 'xs', 's', 'm', 'l', or 'xl'; only relevant
+            for 'training', 'validation', or 'testing' splits.
+        domain: The name of the domain for the 'evaluation' split.
         base_url: An optional base URL that will overwrite the global default base URL.
 
     Return:
@@ -52,13 +68,15 @@ def list_files(relative_path: str, base_url: Optional[str] = None) -> List[str]:
     """
     if base_url is None:
         base_url = BASE_URL
-    url = base_url + "/" + relative_path
+    url = base_url + "/" + dataset_name + "/files.json"
     session = Session()
     resp = session.get(url)
     resp.raise_for_status()
-    text = resp.text
-    files = [relative_path + "/" + match for match in re.findall(FILE_REGEXP, text)]
-    return files
+    files = json.loads(resp.text)
+    if split == "evaluation":
+        return files[reference_sensor.lower()][split.lower()][domain.lower()]
+    else:
+        return files[reference_sensor.lower()][split.lower()][subset.lower()]
 
 
 def download_file(url: str, destination: Path) -> None:
@@ -175,29 +193,62 @@ def download_files(
 
 
 def download_missing(
-    dataset: str,
-    destination: Path,
-    base_url: Optional[str] = None,
-    progress_bar: bool = False,
+        dataset_name: str,
+        reference_sensor: str,
+        geometry: str,
+        split: str,
+        subset: str = "xl",
+        domain: str = "conus",
+        destination: Path = None,
+        base_url: Optional[str] = None,
+        progress_bar: bool = False,
 ) -> None:
     """
     Download missing file from dataset.
 
     Args:
-        datset: A relative URL identifying (parts of) a dataset.
+        dataset_name: The name of the dataset, i.e., 'spr' for the satellite
+            precipitation retrieval (SPR) dataset..
+        reference_sensor: The reference sensor ('gmi' or 'atms')
+        geometry: The viewing geometry ('on_swath', or 'gridded')
+        split: The name of the data split, i.e., 'training', 'validation',
+            'testing', or 'evaluation'
+        subset: The subset, i.e, 'xs', 's', 'm', 'l', or 'xl'; only relevant
+            for 'training', 'validation', or 'testing' splits.
+        domain: The name of the domain for the 'evaluation' split.
+
         destination: Path pointing to the local directory containing the IPWGML data.
         base_url: If give, will overwrite the globally defined default URL.
     """
-    local_files = set(
-        [
-            str(path.relative_to(destination))
-            for path in (destination / dataset).glob("*.nc")
-        ]
+    local_files = get_files(
+        dataset_name,
+        reference_sensor,
+        geometry,
+        split,
+        subset,
+        domain
     )
-    remote_files = set(list_files(dataset, base_url=base_url))
-    missing = remote_files - local_files
+    remote_files = list_files(
+        dataset_name,
+        reference_sensor,
+        geometry,
+        split,
+        subset,
+        domain
+    )
 
-    downloaded = download_files(missing, destination, base_url=base_url, progress_bar=progress_bar)
+    missing = set()
+    for name, fls in local_files.items():
+        remote_fls = remote_files[name]
+        missing += set(remote_fls) - set(fls)
+
+
+    downloaded = download_files(
+        missing,
+        destination,
+        base_url=base_url,
+        progress_bar=progress_bar
+    )
     return [destination / fle for fle in downloaded]
 
 
@@ -226,18 +277,17 @@ def download_dataset(
         A dictionary listing locally available files for each input data
         source and the target data.
     """
-    ipwgml_path = config.get_data_path()
+    data_path = config.get_data_path()
     dataset = f"spr/{reference_sensor}/{split}/{geometry}/{format}/"
-
 
     download_missing(
         dataset + "target",
-        ipwgml_path,
+        data_path,
         progress_bar=True,
         base_url=base_url
     )
     paths = {
-        "target": [ipwgml_path / fle for fle in list_files(dataset + "target")]
+        "target": [data_path / fle for fle in list_files(dataset + "target")]
     }
 
     if not isinstance(input_data, list):
@@ -245,12 +295,73 @@ def download_dataset(
     input_data = [inpt if isinstance(inpt, str) else inpt.name for inpt in input_data]
 
     for inpt in input_data:
-        download_missing(dataset + inpt, ipwgml_path, progress_bar=True)
+        download_missing(dataset + inpt, data_path, progress_bar=True)
         paths[inpt] = list_files(dataset + inpt)
-        paths[inpt] = [ipwgml_path / fle for fle in list_files(dataset + inpt)]
+        paths[inpt] = [data_path / fle for fle in list_files(dataset + inpt)]
 
     return paths
 
+
+def get_files(
+        dataset_name: str,
+        reference_sensor: str,
+        geometry: str,
+        split: str,
+        subset: str = "xl",
+        domain: str = "conus",
+        relative_to: Optional[Path] = None,
+        data_path: Optional[Path] = None
+) -> Dict[str, Path]:
+    """
+    Get all available files.
+
+    Args:
+        reference_sensor: The name of the referene sensor.
+        geometry: The viewing geometry.
+        split: The split name.
+        subset: The subset name (only relevant for training, validation,
+             and testing splits).
+        domain: The domain name (only relevant for evaluation split).
+        relative_to: If given, file paths will be relative to the given path
+            rather than absolute.
+        data_path: The root directory containing IPWG data.
+
+    Return:
+        A dictionary mapping data source names to the corresponding files.
+    """
+    if data_path is None:
+        data_path = config.get_data_path()
+    else:
+        data_path = Path(data_path)
+
+    files = {}
+    sources = ["ancillary", "geo", "geo_ir", "target"]
+    for source in [reference_sensor,] + sources:
+        files[source] = []
+        if split != "evaluation":
+            for size_ind in range(SIZES.index(subset) + 1):
+                rel_path = f"{dataset_name}/{reference_sensor}/{split}/{SIZES[size_ind]}/{geometry}/"
+                data_path = data_path / rel_path
+                source_files = sorted(list(data_path.glob(f"**/{source}_*.nc")))
+                if relative_to is not None:
+                    source_files = [path.relative_to(relative_to) for path in source_files]
+                files[source] += source_files
+        else:
+            rel_path = f"spr/{reference_sensor}/{split}/{domain}/{geometry}/"
+            data_path = data_path / rel_path
+            source_files = sorted(list(data_path.glob(f"**/{source}_*.nc")))
+            if relative_to is not None:
+                source_files = [path.relative_to(relative_to) for path in source_files]
+                files[source] += source_files
+
+    ref_times = [get_median_time(path) for path in files[reference_sensor]]
+    for source in sources:
+        if len(files[source]) == 0:
+            files.pop(source)
+            continue
+        assert set(ref_times) == set([get_median_time(path) for path in files[source]])
+
+    return files
 
 
 @click.command()
