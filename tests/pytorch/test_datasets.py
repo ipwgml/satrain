@@ -7,11 +7,11 @@ import torch
 from ipwgml.pytorch.datasets import SPRTabular, SPRSpatial
 
 
-def test_dataset_spr_tabular(spr_gmi_on_swath_tabular_train):
+def test_dataset_spr_tabular(spr_gmi_on_swath_train):
     """
     Test loading of tabular data from the SPR dataset.
     """
-    data_path = spr_gmi_on_swath_tabular_train
+    data_path = spr_gmi_on_swath_train
     dataset = SPRTabular(
         reference_sensor="gmi",
         geometry="on_swath",
@@ -22,7 +22,7 @@ def test_dataset_spr_tabular(spr_gmi_on_swath_tabular_train):
     )
 
     assert len(dataset) > 0
-    x, y = next(iter(dataset))
+    x, y = dataset[0]
     assert "obs_gmi" in x
     assert x["obs_gmi"].shape == (13,)
     assert "obs_geo_ir" in x
@@ -33,11 +33,11 @@ def test_dataset_spr_tabular(spr_gmi_on_swath_tabular_train):
     assert y.numel() == 1
 
 
-def test_dataset_spr_tabular_stacked(spr_gmi_on_swath_tabular_train):
+def test_dataset_spr_tabular_stacked(spr_gmi_on_swath_train):
     """
     Test loading of tabular data from the SPR dataset.
     """
-    data_path = spr_gmi_on_swath_tabular_train
+    data_path = spr_gmi_on_swath_train
     dataset = SPRTabular(
         reference_sensor="gmi",
         geometry="on_swath",
@@ -54,12 +54,12 @@ def test_dataset_spr_tabular_stacked(spr_gmi_on_swath_tabular_train):
     assert y.numel() == 1
 
 
-def test_dataset_spr_tabular_batched(spr_gmi_on_swath_tabular_train):
+def test_dataset_spr_tabular_batched(spr_gmi_on_swath_train):
     """
     Test loading of tabular data from the SPR dataset with batching.
     """
     batch_size = 1024
-    data_path = spr_gmi_on_swath_tabular_train
+    data_path = spr_gmi_on_swath_train
     dataset = SPRTabular(
         reference_sensor="gmi",
         geometry="on_swath",
@@ -107,11 +107,11 @@ def test_dataset_spr_tabular_batched(spr_gmi_on_swath_tabular_train):
             assert y.numel() == batch_size
 
 
-def test_dataset_spr_spatial(spr_gmi_gridded_spatial_train):
+def test_dataset_spr_spatial(spr_gmi_gridded_train):
     """
     Test loading of tabular data from the SPR dataset.
     """
-    data_path = spr_gmi_gridded_spatial_train
+    data_path = spr_gmi_gridded_train
     dataset = SPRSpatial(
         reference_sensor="gmi",
         geometry="gridded",
@@ -129,11 +129,11 @@ def test_dataset_spr_spatial(spr_gmi_gridded_spatial_train):
     assert y.shape == (256, 256)
 
 
-def test_dataset_spr_spatial_stacked(spr_gmi_gridded_spatial_train):
+def test_dataset_spr_spatial_stacked(spr_gmi_gridded_train):
     """
     Test loading of tabular data from the SPR dataset.
     """
-    data_path = spr_gmi_gridded_spatial_train
+    data_path = spr_gmi_gridded_train
     dataset = SPRSpatial(
         reference_sensor="gmi",
         geometry="gridded",

@@ -8,6 +8,7 @@ Defines helper functions used throught the ipwgml package.
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
 import hdf5plugin
 import xarray as xr
@@ -40,11 +41,13 @@ def open_if_required(path_or_dataset: str | Path | xr.Dataset) -> xr.Dataset:
         del handle
 
 
-def get_median_time(path: Path) -> datetime:
+def get_median_time(path: Union[Path, str]) -> datetime:
     """
     Extract median time from filename.
     """
-    date = datetime.strptime(path.name.split("_")[-1][:-3], "%Y%m%d%H%M%S")
+    if isinstance(path, Path):
+        path = path.name
+    date = datetime.strptime(path.split("_")[-1][:-3], "%Y%m%d%H%M%S")
     return date
 
 
@@ -91,3 +94,28 @@ def cleanup_files(path: Path, no_action: bool = False) -> None:
                 print("Extra file: ", fle)
                 if not no_action:
                     fle.unlink()
+
+
+def extract_samples(dataset: xr.Dataset, mask: xr.DataArray):
+    """
+    Extract tabular data from spatial scenes based on reference data availability.
+
+    Args:
+        dataset: The spatial input data.
+        mask: A mask identifying the pixels with valid reference data.
+
+    Return:
+        A new dataset containing only samples with valid reference data.
+    """
+    dataset = dataset.transpose(*mask.dims, ...)
+    extracted = xr.Dataset()
+    for name in dataset:
+        var = dataset[name]
+        if var.dims[:2] == mask.dims:
+            var_e = var.data[mask.data]
+            extracted[name] = (("samples",) + var.dims[2:], var_e)
+        else:
+            extracted[name] = var
+    for dim in dataset.dims:
+        extracted[dim] = dataset[dim]
+    return extracted

@@ -38,7 +38,7 @@ import xarray as xr
 
 from ipwgml import baselines
 from ipwgml import config
-from ipwgml.data import download_missing
+from ipwgml.data import download_missing, get_local_files
 from ipwgml.definitions import DOMAINS, ALL_INPUTS
 import ipwgml.logging
 import ipwgml.metrics
@@ -277,6 +277,7 @@ def load_retrieval_input_data(
     # Load time from target file.
     target_file = input_files.get_path("target", geometry)
     with xr.open_dataset(target_file, engine="h5netcdf") as target_data:
+        target_data = target_data.transpose(*spatial_dims, ...)
         input_data["time"] = (spatial_dims, target_data.time.data)
 
     for inpt in retrieval_input:
@@ -286,6 +287,7 @@ def load_retrieval_input_data(
                 dims = (f"ancillary_features",) + spatial_dims
             else:
                 dims = (f"channels_{inpt.name}",) + spatial_dims
+            print(path)
             data = inpt.load_data(path, target_time=input_data.time)
             for name, arr in data.items():
                 input_data[name] = dims, arr
@@ -744,7 +746,7 @@ class Evaluator:
             ipwgml.metrics.MSE(),
             ipwgml.metrics.SMAPE(),
             ipwgml.metrics.CorrelationCoef(),
-            ipwgml.metrics.SpectralCoherence(),
+            ipwgml.metrics.SpectralCoherence(window_size=48),
         ]
         self._precip_detection_metrics = [
             ipwgml.metrics.POD(),
@@ -759,29 +761,51 @@ class Evaluator:
         ]
         self._prob_heavy_precip_detection_metrics = [ipwgml.metrics.PRCurve()]
 
-        dataset = f"spr/{self.reference_sensor}/evaluation/{self.domain}/{self.geometry}/"
-        for inpt in self.retrieval_input:
+        sources = set([inpt.name for inpt in self.retrieval_input] + ["ancillary"])
+        for source in sources:
             if download:
                 download_missing(
-                    dataset + inpt.name, ipwgml_path, progress_bar=True
+                    dataset_name="spr",
+                    reference_sensor=self.reference_sensor,
+                    geometry=self.geometry,
+                    split="evaluation",
+                    source=source,
+                    domain=self.domain,
+                    destination=ipwgml_path,
+                    progress_bar=True
                 )
-            files = sorted(list((ipwgml_path / dataset / inpt.name).glob("*.nc")))
-            setattr(self, inpt.name + "_" + self.geometry, files)
-
-        if getattr(self, f"ancillary_{self.geometry}", None) is None:
-            if download:
-                download_missing(
-                    dataset + "ancillary", ipwgml_path, progress_bar=True
-                )
-            files = sorted(list((ipwgml_path / dataset / "ancillary").glob("*.nc")))
-            setattr(self, "ancillary" + "_" + self.geometry, files)
+        files = get_local_files(
+            dataset_name="spr",
+            reference_sensor=self.reference_sensor,
+            geometry=self.geometry,
+            split="evaluation",
+            domain=self.domain,
+            data_path=ipwgml_path
+        )
+        for name, source_files in files.items():
+            setattr(self, name + "_" + self.geometry, source_files)
 
         for geometry in ["gridded", "on_swath"]:
-            dataset = f"spr/{self.reference_sensor}/evaluation/{self.domain}/{geometry}/"
             if download:
-                download_missing(dataset + "target", ipwgml_path, progress_bar=True)
-            files = sorted(list((ipwgml_path / dataset / "target").glob("*.nc")))
-            setattr(self, "target_" + geometry, files)
+                download_missing(
+                    dataset_name="spr",
+                    reference_sensor=self.reference_sensor,
+                    geometry=geometry,
+                    split="evaluation",
+                    source="target",
+                    domain=self.domain,
+                    destination=ipwgml_path,
+                    progress_bar=True
+                )
+            files = get_local_files(
+                dataset_name="spr",
+                reference_sensor=self.reference_sensor,
+                geometry=geometry,
+                split="evaluation",
+                domain=self.domain,
+                data_path=ipwgml_path
+            )
+            setattr(self, "target_" + geometry, files["target"])
 
     @property
     def precip_quantification_metrics(self):

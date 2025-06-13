@@ -25,11 +25,13 @@ from torch.utils.data import Dataset
 import hdf5plugin
 import xarray as xr
 
+from ipwgml.data import download_missing, get_local_files
 from ipwgml.definitions import ALL_INPUTS
-from ipwgml.data import download_missing
 from ipwgml import config
 from ipwgml.input import InputConfig, parse_retrieval_inputs
 from ipwgml.target import TargetConfig
+from ipwgml.utils import get_median_time, extract_samples
+
 
 
 class SPRTabular(Dataset):
@@ -46,6 +48,7 @@ class SPRTabular(Dataset):
         reference_sensor: str,
         geometry: str,
         split: str,
+        subset: str = "xl",
         batch_size: Optional[int] = None,
         shuffle: Optional[bool] = True,
         retrieval_input: List[str | Dict[str, Any] | InputConfig] = None,
@@ -97,6 +100,7 @@ class SPRTabular(Dataset):
                 "Split must be one of ['training', 'validation', 'testing']"
             )
         self.split = split
+        self.subset = subset
         self.batch_size = batch_size
         self.shuffle = shuffle
 
@@ -119,42 +123,78 @@ class SPRTabular(Dataset):
         self.target_data = None
 
         # Load target data and mask
-        dataset = f"spr/{self.reference_sensor}/{self.split}/{self.geometry}/tabular/"
         if download:
-            download_missing(dataset + "target", ipwgml_path, progress_bar=True)
-        files = list((ipwgml_path / dataset / "target").glob("*.nc"))
-        if len(files) == 0:
+            sources = set([inpt.name for inpt in self.retrieval_input] + ["target"])
+            for source in sources:
+                download_missing(
+                    dataset_name="spr",
+                    reference_sensor=self.reference_sensor,
+                    geometry=self.geometry,
+                    source=source,
+                    split=self.split,
+                    subset=self.subset,
+                    progress_bar=True,
+                    destination=ipwgml_path
+                )
+        files = get_local_files(
+            dataset_name="spr",
+            reference_sensor=self.reference_sensor,
+            geometry=self.geometry,
+            split=self.split,
+            subset=self.subset,
+            data_path=ipwgml_path,
+        )
+        if len(files["target"]) == 0:
             raise ValueError(
                 f"Couldn't find any target data files. "
                 " Please make sure that the ipwgml data path is correct or "
                 "set 'download' to True to download the file."
             )
-        self.target_data = xr.load_dataset(
-            files[0],
-            engine="h5netcdf"
-        )
-        valid = ~self.target_config.get_mask(self.target_data)
-        self.target_data = self.target_data[{"samples": valid}]
-
-        # Load input data
-        for inpt in self.retrieval_input:
-            if download:
-                download_missing(dataset + inpt.name, ipwgml_path, progress_bar=True)
-            files = list((ipwgml_path / dataset / inpt.name).glob("*.nc"))
-            if len(files) == 0:
-                raise ValueError(
-                    f"Couldn't find any input data files for input '{inpt.name}'. "
-                    " Please make sure that the ipwgml data path is correct or "
-                    "set 'download' to True to download the file."
-                )
-            input_data = xr.load_dataset(files[0], engine="h5netcdf")
-            setattr(self, inpt.name + "_data", input_data[{"samples": valid}])
+        self._load_training_data(files)
 
         self.rng = np.random.default_rng(seed=42)
         if self.shuffle:
             self.indices = self.rng.permutation(self.target_data.samples.size)
         else:
             self.indices = np.arange(self.target_data.samples.size)
+
+
+    def _load_training_data(self, files: Dict[str, Path]):
+        target_files = files["target"]
+        self.target_data = []
+        for inpt in self.retrieval_input:
+            setattr(self, inpt.name + "_data", [])
+
+        for ind, target_file in enumerate(target_files):
+            target_data = xr.load_dataset(target_file)
+            valid = ~self.target_config.get_mask(target_data)
+            valid = xr.DataArray(
+                data=valid,
+                dims=target_data.surface_precip.dims
+            )
+            self.target_data.append(extract_samples(target_data, valid))
+
+            ref_time = get_median_time(target_file)
+
+            for inpt in self.retrieval_input:
+                input_time = get_median_time(files[inpt.name][ind])
+                if ref_time != input_time:
+                    raise ValueError(
+                        "Encountered an input files %s that is inconsistent with the corresponding "
+                        "reference file %s. This indicates that the dataset has not been downloaded "
+                        "properly."
+                    )
+                input_data = extract_samples(xr.load_dataset(files[inpt.name][ind]), valid)
+                if "time" in input_data.coords:
+                    input_data = input_data.reset_index("time", drop=True)
+                getattr(self, inpt.name + "_data").append(input_data)
+
+        self.target_data = xr.concat(self.target_data, dim="samples")
+        for inpt in self.retrieval_input:
+            print(getattr(self, inpt.name + "_data")[0])
+            input_data = xr.concat(getattr(self, inpt.name + "_data"), dim="samples")
+            setattr(self, inpt.name + "_data", input_data)
+
 
     def __len__(self) -> int:
         """
@@ -228,25 +268,6 @@ class SPRTabular(Dataset):
         return input_data, surface_precip
 
 
-def get_median_time(filename_or_path: Path | str) -> datetime:
-    """
-    Get median time from the filanem of a IPWGML SPR training scene.
-
-    Args:
-        filename: The filename or path pointing to any spatial training data file.
-
-    Return:
-        A datetime object representing the median time of the training scene.
-    """
-    if isinstance(filename_or_path, Path):
-        filename = filename_or_path.name
-    else:
-        filename = filename_or_path
-    date_str = filename.split("_")[-1][:-3]
-    median_time = datetime.strptime(date_str, "%Y%m%d%H%M%S")
-    return median_time
-
-
 def apply(tensors: Any, transform: torch.Tensor) -> torch.Tensor:
     """
     Apply transformation to any container containing torch.Tensors.
@@ -282,6 +303,7 @@ class SPRSpatial:
         reference_sensor: str,
         geometry: str,
         split: str,
+        subset: str = "xl",
         retrieval_input: List[str | dict[str | Any] | InputConfig] = None,
         target_config: TargetConfig = None,
         stack: bool = False,
@@ -329,6 +351,7 @@ class SPRSpatial:
                 "Split must be one of ['training', 'validation', 'testing']"
             )
         self.split = split
+        self.subset = subset
 
         self.manager = multiprocessing.Manager()
         if retrieval_input is None:
@@ -351,16 +374,37 @@ class SPRSpatial:
         self.target = None
 
         dataset = f"spr/{self.reference_sensor}/{self.split}/{self.geometry}/spatial/"
-        for inpt in self.retrieval_input:
-            if download:
-                download_missing(dataset + inpt.name, ipwgml_path, progress_bar=True)
-            files = sorted(list((ipwgml_path / dataset / inpt.name).glob("*.nc")))
-            setattr(self, inpt.name, np.array([str(path) for path in files]))
 
         if download:
-            download_missing(dataset + "target", ipwgml_path, progress_bar=True)
-        files = sorted(list((ipwgml_path / dataset / "target").glob("*.nc")))
-        self.target = np.array([str(path) for path in files])
+            sources = set([inpt.name for inpt in self.retrieval_input] + ["target"])
+            for source in sources:
+                download_missing(
+                    dataset_name="spr",
+                    reference_sensor=self.reference_sensor,
+                    geometry=self.geometry,
+                    source=source,
+                    split=self.split,
+                    subset=self.subset,
+                    progress_bar=True,
+                    destination=ipwgml_path
+                )
+        files = get_local_files(
+            dataset_name="spr",
+            reference_sensor=self.reference_sensor,
+            geometry=self.geometry,
+            split=self.split,
+            subset=self.subset,
+            data_path=ipwgml_path,
+        )
+        if len(files["target"]) == 0:
+            raise ValueError(
+                f"Couldn't find any target data files. "
+                " Please make sure that the ipwgml data path is correct or "
+                "set 'download' to True to download the file."
+            )
+
+        for source, source_files in files.items():
+            setattr(self, source, np.array([str(path) for path in source_files]))
 
         self.check_consistency()
         self.worker_init_fn(0)
@@ -371,7 +415,6 @@ class SPRSpatial:
         """
         seed = int.from_bytes(os.urandom(4), "big") + w_id
         self.rng = np.random.default_rng(seed)
-
 
     def check_consistency(self):
         """

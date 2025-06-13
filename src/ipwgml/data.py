@@ -7,15 +7,17 @@ Provides functionality to access IPWG ML datasets.
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+import json
 import logging
 import multiprocessing
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 import re
 
 import click
 import requests
-from requests_cache import CachedSession
+#from requests_cache import CachedSession
 from requests import Session
 from rich.progress import Progress
 
@@ -33,50 +35,58 @@ import ipwgml.logging
 
 LOGGER = logging.getLogger(__name__)
 
+_TESTING = False
 
-BASE_URL = "https://rain.atmos.colostate.edu/gprof_nn/ipwgml"
+def enable_testing() -> None:
+    """
+    Enable test mode.
+    """
+    global _TESTING
+    _TESTING = True
+
+
+def get_data_url(dataset_name: str) -> str:
+    """
+    Returns the URL from which the IPWGML data can be downloaded.
+
+    Args:
+        dataset_name: The name of the dataset ('spr').
+
+    Return:
+        A string containing the URL.
+    """
+    if dataset_name.lower() == "spr":
+        if _TESTING:
+            return "https://rain.atmos.colostate.edu/gprof_nn/ipwgml/.test"
+        else:
+            return "https://rain.atmos.colostate.edu/gprof_nn/ipwgml/"
+    raise ValueError(
+        f"Unknown dataset name: {dataset_name}"
+    )
 
 
 FILE_REGEXP = re.compile('a href="([\w_]*\.nc)"')
 
 
-def list_files(
-        dataset_name: str,
-        reference_sensor: str,
-        geometry: str,
-        split: str,
-        subset: "xl",
-        domain: "conus",
-        base_url: Optional[str] = None) -> Dict[str, str]:
+def get_files_in_dataset(dataset_name: str) -> Dict[str, Any]:
     """
-    List files in dataset.
+    Lists all available files for a given dataset.
 
     Args:
         dataset_name: The name of the dataset, i.e., 'spr' for the satellite
             precipitation retrieval (SPR) dataset..
-        reference_sensor: The reference sensor ('gmi' or 'atms')
-        geometry: The viewing geometry ('on_swath', or 'gridded')
-        split: The name of the data split, i.e., 'training', 'validation',
-            'testing', or 'evaluation'
-        subset: The subset, i.e, 'xs', 's', 'm', 'l', or 'xl'; only relevant
-            for 'training', 'validation', or 'testing' splits.
-        domain: The name of the domain for the 'evaluation' split.
-        base_url: An optional base URL that will overwrite the global default base URL.
 
     Return:
-        A list of all files in the dataset.
+        A nested dictionary containing all files in the dataset.
     """
-    if base_url is None:
-        base_url = BASE_URL
-    url = base_url + "/" + dataset_name + "/files.json"
-    session = Session()
-    resp = session.get(url)
-    resp.raise_for_status()
-    files = json.loads(resp.text)
-    if split == "evaluation":
-        return files[reference_sensor.lower()][split.lower()][domain.lower()]
+    if _TESTING:
+        fname = f"files_{dataset_name.lower()}_test.json"
     else:
-        return files[reference_sensor.lower()][split.lower()][subset.lower()]
+        fname = f"files_{dataset_name.lower()}.json"
+
+    path = Path(__file__).parent / "files" / fname
+    files = json.loads(open(path, "r").read())
+    return files
 
 
 def download_file(url: str, destination: Path) -> None:
@@ -108,29 +118,25 @@ def progress_bar_or_not(progress_bar: bool) -> Progress | None:
 
 
 def download_files(
-    files: List[str],
-    destination: Path,
-    progress_bar: bool = True,
-    retries: int = 3,
-    base_url: Optional[str] = None,
+        base_url: str,
+        files: List[str],
+        destination: Path,
+        progress_bar: bool = True,
+        retries: int = 3,
 ) -> List[str]:
     """
     Download files using multiple threads.
 
     Args:
+        base_url: The URL from which the remote data is available.
         files: A list containing the relative paths of the files to download.
         destination: A Path object pointing to the local path to which to download the files.
         progress_bar: Whether or not to display a progress bar during download.
         retries: The number of retries to perform for failed files.
-        base_url: Optional base URL to use for the data download that will overwrite the
-             globally defined default base URL.
 
     Return:
         A list of the downloaded files.
     """
-    if base_url is None:
-        base_url = BASE_URL
-
     n_threads = min(multiprocessing.cpu_count(), 8)
     pool = ThreadPoolExecutor(max_workers=n_threads)
     ctr = 0
@@ -197,10 +203,10 @@ def download_missing(
         reference_sensor: str,
         geometry: str,
         split: str,
+        source: str,
         subset: str = "xl",
         domain: str = "conus",
         destination: Path = None,
-        base_url: Optional[str] = None,
         progress_bar: bool = False,
 ) -> None:
     """
@@ -216,37 +222,34 @@ def download_missing(
         subset: The subset, i.e, 'xs', 's', 'm', 'l', or 'xl'; only relevant
             for 'training', 'validation', or 'testing' splits.
         domain: The name of the domain for the 'evaluation' split.
-
         destination: Path pointing to the local directory containing the IPWGML data.
-        base_url: If give, will overwrite the globally defined default URL.
+        progress_base: Whether or not display a progress bar displaying the download progress.
+
+    Return:
+        A list containing the local paths of the downloaded files.
     """
-    local_files = get_files(
+    local_files = get_local_files(
         dataset_name,
         reference_sensor,
         geometry,
         split,
         subset,
-        domain
+        domain,
+        data_path=destination,
+        relative_to=destination
     )
-    remote_files = list_files(
-        dataset_name,
-        reference_sensor,
-        geometry,
-        split,
-        subset,
-        domain
-    )
+    local_files = map(str, local_files.get(source, []))
+    all_files = get_files_in_dataset(dataset_name)
+    if split.lower() == "evaluation":
+        all_files = all_files[reference_sensor][split][domain][geometry][source]
+    else:
+        all_files = all_files[reference_sensor][split][subset][geometry][source]
 
-    missing = set()
-    for name, fls in local_files.items():
-        remote_fls = remote_files[name]
-        missing += set(remote_fls) - set(fls)
-
-
+    missing = set(all_files) - set(local_files)
     downloaded = download_files(
+        get_data_url(dataset_name),
         missing,
         destination,
-        base_url=base_url,
         progress_bar=progress_bar
     )
     return [destination / fle for fle in downloaded]
@@ -258,8 +261,8 @@ def download_dataset(
         input_data: Union[str, List[str]],
         split: str,
         geometry: str,
-        format: str,
-        base_url: Optional[str] = None
+        domain: str = "conus",
+        subset: str = "xl",
 ) -> Dict[str, List[Path]]:
     """
     Download IPWGML dataset and return list of local files.
@@ -270,39 +273,55 @@ def download_dataset(
         input_data: The input data sources for which to download the data.
         split: Which split of the data to download.
         geometry: For which retrieval geometry to download the data.
-        format: Which data format to download.
-        base_url: The URL from which to download the data.
 
     Return:
         A dictionary listing locally available files for each input data
         source and the target data.
     """
     data_path = config.get_data_path()
-    dataset = f"spr/{reference_sensor}/{split}/{geometry}/{format}/"
 
     download_missing(
-        dataset + "target",
-        data_path,
+        dataset_name,
+        reference_sensor,
+        geometry,
+        split,
+        source="target",
+        subset=subset,
+        domain=domain,
+        destination=data_path,
         progress_bar=True,
-        base_url=base_url
     )
-    paths = {
-        "target": [data_path / fle for fle in list_files(dataset + "target")]
-    }
 
     if not isinstance(input_data, list):
         input_data = [input_data]
     input_data = [inpt if isinstance(inpt, str) else inpt.name for inpt in input_data]
 
     for inpt in input_data:
-        download_missing(dataset + inpt, data_path, progress_bar=True)
-        paths[inpt] = list_files(dataset + inpt)
-        paths[inpt] = [data_path / fle for fle in list_files(dataset + inpt)]
+        download_missing(
+            dataset_name,
+            reference_sensor,
+            geometry,
+            split,
+            source=inpt,
+            subset=subset,
+            domain=domain,
+            destination=data_path,
+            progress_bar=True,
+        )
 
+    paths = get_local_files(
+        dataset_name=dataset_name,
+        reference_sensor=reference_sensor,
+        geometry=geometry,
+        split=split,
+        subset=subset,
+        domain=domain,
+        data_path=data_path
+    )
     return paths
 
 
-def get_files(
+def get_local_files(
         dataset_name: str,
         reference_sensor: str,
         geometry: str,
@@ -313,7 +332,7 @@ def get_files(
         data_path: Optional[Path] = None
 ) -> Dict[str, Path]:
     """
-    Get all available files.
+    Get all locally available files.
 
     Args:
         reference_sensor: The name of the referene sensor.
@@ -341,23 +360,22 @@ def get_files(
         if split != "evaluation":
             for size_ind in range(SIZES.index(subset) + 1):
                 rel_path = f"{dataset_name}/{reference_sensor}/{split}/{SIZES[size_ind]}/{geometry}/"
-                data_path = data_path / rel_path
-                source_files = sorted(list(data_path.glob(f"**/{source}_*.nc")))
+                split_path = data_path / rel_path
+                source_files = sorted(list(split_path.glob(f"**/{source}_??????????????.nc")))
                 if relative_to is not None:
                     source_files = [path.relative_to(relative_to) for path in source_files]
                 files[source] += source_files
         else:
-            rel_path = f"spr/{reference_sensor}/{split}/{domain}/{geometry}/"
-            data_path = data_path / rel_path
-            source_files = sorted(list(data_path.glob(f"**/{source}_*.nc")))
+            rel_path = f"{dataset_name}/{reference_sensor}/{split}/{domain}/{geometry}/"
+            split_path = data_path / rel_path
+            source_files = sorted(list(split_path.glob(f"**/{source}_??????????????.nc")))
             if relative_to is not None:
                 source_files = [path.relative_to(relative_to) for path in source_files]
-                files[source] += source_files
+            files[source] += source_files
 
     ref_times = [get_median_time(path) for path in files[reference_sensor]]
     for source in sources:
-        if len(files[source]) == 0:
-            files.pop(source)
+        if len(ref_times) == 0 or len(files[source]) == 0:
             continue
         assert set(ref_times) == set([get_median_time(path) for path in files[source]])
 

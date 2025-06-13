@@ -1,96 +1,55 @@
 """
 Tests for the ipwgml.data module.
 """
-
-from conftest import TEST_URL
-
-from ipwgml.data import list_files
+import os
 
 
-def test_list_files():
+from ipwgml.data import (
+    enable_testing,
+    get_files_in_dataset,
+    get_local_files
+)
+
+
+def test_get_files_in_dataset():
     """
     Tests finding files from SPR dataset and ensure that more than on file is found.
     """
-    files = list_files("spr/gmi/training/gridded/spatial/gmi", base_url=TEST_URL)
-    assert len(files) > 0
-    parts = files[0].split(".")
-    assert len(parts) == 2
-    assert parts[-1] == "nc"
+    files = get_files_in_dataset("spr")
+    assert "gmi" in files
+    assert len(files["gmi"]["training"]["xl"]["gridded"]["gmi"]) > 0
+    assert len(files["gmi"]["training"]["xl"]["gridded"]["gmi"]) > len(files["gmi"]["training"]["l"]["gridded"]["gmi"])
 
 
-def test_download_files_spr_gmi_gridded_spatial_train(spr_gmi_gridded_spatial_train):
+def test_download_files_spr_gmi_gridded_train(spr_gmi_gridded_train):
     """
     Ensure that fixture successfully downloaded files.
     """
-    ds_path = (
-        spr_gmi_gridded_spatial_train
-        / "spr"
-        / "gmi"
-        / "training"
-        / "gridded"
-        / "spatial"
-    )
-    gmi_files = list((ds_path / "gmi").glob("*.nc"))
-    assert len(gmi_files) == 2
-    ancillary_files = list((ds_path / "ancillary").glob("*.nc"))
-    assert len(ancillary_files) == 2
-    ancillary_files = list((ds_path / "geo_ir").glob("*.nc"))
-    assert len(ancillary_files) == 2
-    target_files = list((ds_path / "target").glob("*.nc"))
-    assert len(target_files) == 2
+    for source in ["gmi", "ancillary", "geo_ir", "target"]:
+        files = get_local_files("spr", "gmi", "gridded", "training", data_path=spr_gmi_gridded_train)
+        assert len(files) == 5
 
-
-def test_download_files_spr_gmi_on_swath_tabular_train(spr_gmi_on_swath_tabular_train):
+def test_download_files_spr_gmi_on_swath_train(spr_gmi_gridded_train):
     """
     Ensure that fixture successfully downloaded files.
     """
-    ds_path = (
-        spr_gmi_on_swath_tabular_train
-        / "spr"
-        / "gmi"
-        / "training"
-        / "on_swath"
-        / "tabular"
-    )
-    files = list((ds_path / "gmi").glob("*.nc"))
-    assert len(files) == 1
-    files = list((ds_path / "ancillary").glob("*.nc"))
-    assert len(files) == 1
-    files = list((ds_path / "geo_ir").glob("*.nc"))
-    assert len(files) == 1
-    files = list((ds_path / "target").glob("*.nc"))
-    assert len(files) == 1
-
+    for source in ["gmi", "ancillary", "geo_ir", "target"]:
+        files = get_local_files("spr", "gmi", "on_swath", "training", data_path=spr_gmi_gridded_train)
+        assert len(files) == 5
 
 def test_download_files_spr_gmi_evaluation(spr_gmi_evaluation):
     """
     Ensure that fixture successfully downloaded files.
     """
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "gridded"
-    files = list((ds_path / "gmi").glob("*.nc"))
-    assert len(files) == 1
-    files = list((ds_path / "ancillary").glob("*.nc"))
-    assert len(files) == 1
-    # files = list((ds_path / "geo_ir").glob("*.nc"))
-    # assert len(files) == 1
-    files = list((ds_path / "target").glob("*.nc"))
-    assert len(files) == 1
-
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "on_swath"
-    files = list((ds_path / "gmi").glob("*.nc"))
-    assert len(files) == 1
-    files = list((ds_path / "ancillary").glob("*.nc"))
-    assert len(files) == 1
-    # files = list((ds_path / "geo_ir").glob("*.nc"))
-    # assert len(files) == 1
-    files = list((ds_path / "target").glob("*.nc"))
-    assert len(files) == 1
+    files = get_local_files("spr", "gmi", "on_swath", "evaluation", domain="conus", data_path=spr_gmi_evaluation)
+    for source in ["gmi", "ancillary", "geo_ir", "target"]:
+        assert len(files[source]) == 1
 
 
-def test_download_spr_gmi_dataset(spr_gmi_on_swath_tabular_train_dataset):
+def test_download_spr_gmi_dataset(spr_gmi_on_swath_train_dataset):
     """
     Ensure that download dataset function
     """
-    files = spr_gmi_on_swath_tabular_train_dataset
-    assert len(files["gmi"]) == 1
-    assert len(files["target"]) == 1
+    files = spr_gmi_on_swath_train_dataset
+    assert len(files["gmi"]) == 5
+    assert len(files["target"]) == 5

@@ -1,54 +1,55 @@
 import pytest
 
 from ipwgml.data import (
+    enable_testing,
     download_missing,
     download_dataset
 )
 
 
-TEST_URL = "https://rain.atmos.colostate.edu/gprof_nn/ipwgml/.test"
+enable_testing()
 
 
 @pytest.fixture(scope="session")
-def spr_gmi_gridded_spatial_train(tmp_path_factory):
+def spr_gmi_gridded_train(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval benchmark data for GMI with
     gridded geometry.
     """
     dest = tmp_path_factory.mktemp("ipwgml")
-    download_missing("spr/gmi/training/gridded/spatial/gmi", dest, base_url=TEST_URL)
-    download_missing(
-        "spr/gmi/training/gridded/spatial/ancillary", dest, base_url=TEST_URL
-    )
-    download_missing("spr/gmi/training/gridded/spatial/target", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/training/gridded/spatial/geo_ir", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/training/gridded/spatial/geo", dest, base_url=TEST_URL)
+    for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:
+        download_missing(
+            dataset_name="spr",
+            reference_sensor="gmi",
+            geometry="gridded",
+            split="training",
+            source=source,
+            destination=dest
+        )
     return dest
 
 
 @pytest.fixture(scope="session")
-def spr_gmi_on_swath_tabular_train(tmp_path_factory):
+def spr_gmi_on_swath_train(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval benchmark data for GMI with
     on_swath geometry.
     """
     dest = tmp_path_factory.mktemp("ipwgml")
-    download_missing("spr/gmi/training/on_swath/tabular/gmi", dest, base_url=TEST_URL)
-    download_missing(
-        "spr/gmi/training/on_swath/tabular/ancillary", dest, base_url=TEST_URL
-    )
-    download_missing(
-        "spr/gmi/training/on_swath/tabular/target", dest, base_url=TEST_URL
-    )
-    download_missing(
-        "spr/gmi/training/on_swath/tabular/geo_ir", dest, base_url=TEST_URL
-    )
-    download_missing("spr/gmi/training/on_swath/tabular/geo", dest, base_url=TEST_URL)
+    for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:
+        download_missing(
+            dataset_name="spr",
+            reference_sensor="gmi",
+            geometry="on_swath",
+            split="training",
+            source=source,
+            destination=dest
+        )
     return dest
 
 
 @pytest.fixture(scope="session")
-def spr_gmi_on_swath_tabular_train_dataset(tmp_path_factory):
+def spr_gmi_on_swath_train_dataset(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval benchmark data for GMI with
     on_swath geometry.
@@ -59,8 +60,6 @@ def spr_gmi_on_swath_tabular_train_dataset(tmp_path_factory):
         ["gmi"],
         split="training",
         geometry="on_swath",
-        format="tabular",
-        base_url=TEST_URL
     )
 
 
@@ -70,10 +69,15 @@ def spr_gmi_evaluation(tmp_path_factory):
     Fixture to download satellite-precipitation retrieval evaluation data for GMI.
     """
     dest = tmp_path_factory.mktemp("ipwgml")
-    download_missing("spr/gmi/evaluation/conus/gridded/gmi", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/conus/gridded/ancillary", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/conus/gridded/target", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/conus/on_swath/gmi", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/conus/on_swath/ancillary", dest, base_url=TEST_URL)
-    download_missing("spr/gmi/evaluation/conus/on_swath/target", dest, base_url=TEST_URL)
+    for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:
+        for geometry in ["gridded", "on_swath"]:
+            download_missing(
+                dataset_name="spr",
+                reference_sensor="gmi",
+                geometry=geometry,
+                split="evaluation",
+                domain="conus",
+                source=source,
+                destination=dest
+            )
     return dest

@@ -8,6 +8,10 @@ import numpy as np
 import pytest
 import xarray as xr
 
+
+from ipwgml.data import (
+    enable_testing,
+)
 from ipwgml.evaluation import (
     InputFiles,
     Evaluator,
@@ -17,6 +21,9 @@ from ipwgml.evaluation import (
 )
 from ipwgml.input import InputConfig, GMI, Ancillary
 from ipwgml.metrics import Metric, Bias, MSE, CorrelationCoef
+
+
+enable_testing()
 
 
 def test_find_files(spr_gmi_evaluation):
@@ -50,8 +57,10 @@ def test_load_input_data(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "target_20220101040042.nc"
     )
     target_file_on_swath = (
         spr_gmi_evaluation
@@ -60,8 +69,10 @@ def test_load_input_data(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "target_20220101040042.nc"
     )
     gmi_file_gridded = (
         spr_gmi_evaluation
@@ -70,8 +81,10 @@ def test_load_input_data(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "gmi"
-        / "gmi_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "gmi_20220101040042.nc"
     )
     gmi_file_on_swath = (
         spr_gmi_evaluation
@@ -80,8 +93,10 @@ def test_load_input_data(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "gmi"
-        / "gmi_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "gmi_20220101040042.nc"
     )
     ancillary_file_gridded = (
         spr_gmi_evaluation
@@ -90,8 +105,10 @@ def test_load_input_data(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "ancillary"
-        / "ancillary_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "ancillary_20220101040042.nc"
     )
     ancillary_file_on_swath = (
         spr_gmi_evaluation
@@ -100,8 +117,10 @@ def test_load_input_data(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "ancillary"
-        / "ancillary_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "ancillary_20220101040042.nc"
     )
     target_file = (
         spr_gmi_evaluation
@@ -110,8 +129,10 @@ def test_load_input_data(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "target_20220101040042.nc"
     )
 
     input_files = InputFiles(
@@ -156,6 +177,7 @@ def test_load_input_data(spr_gmi_evaluation):
 
 @pytest.fixture
 def input_data_gridded(spr_gmi_evaluation):
+
     target_file_gridded = (
         spr_gmi_evaluation
         / "spr"
@@ -163,8 +185,10 @@ def input_data_gridded(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "target_20220101040042.nc"
     )
     target_file_on_swath = (
         spr_gmi_evaluation
@@ -173,8 +197,10 @@ def input_data_gridded(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "target_20220101040042.nc"
     )
     gmi_file_gridded = (
         spr_gmi_evaluation
@@ -183,8 +209,10 @@ def input_data_gridded(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "gmi"
-        / "gmi_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "gmi_20220101040042.nc"
     )
     gmi_file_on_swath = (
         spr_gmi_evaluation
@@ -193,8 +221,10 @@ def input_data_gridded(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "gmi"
-        / "gmi_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "gmi_20220101040042.nc"
     )
     ancillary_file_gridded = (
         spr_gmi_evaluation
@@ -203,8 +233,10 @@ def input_data_gridded(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "ancillary"
-        / "ancillary_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "ancillary_20220101040042.nc"
     )
     ancillary_file_on_swath = (
         spr_gmi_evaluation
@@ -213,18 +245,10 @@ def input_data_gridded(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "ancillary"
-        / "ancillary_20230701195312.nc"
-    )
-    target_file = (
-        spr_gmi_evaluation
-        / "spr"
-        / "gmi"
-        / "evaluation"
-        / "conus"
-        / "gridded"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "ancillary_20220101040042.nc"
     )
 
     input_files = InputFiles(
@@ -250,6 +274,7 @@ def input_data_gridded(spr_gmi_evaluation):
 
 @pytest.fixture
 def input_data_on_swath(spr_gmi_evaluation):
+
     target_file_gridded = (
         spr_gmi_evaluation
         / "spr"
@@ -257,8 +282,10 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "target_20220101040042.nc"
     )
     target_file_on_swath = (
         spr_gmi_evaluation
@@ -267,8 +294,10 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "target_20220101040042.nc"
     )
     gmi_file_gridded = (
         spr_gmi_evaluation
@@ -277,8 +306,10 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "gmi"
-        / "gmi_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "gmi_20220101040042.nc"
     )
     gmi_file_on_swath = (
         spr_gmi_evaluation
@@ -287,8 +318,10 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "gmi"
-        / "gmi_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "gmi_20220101040042.nc"
     )
     ancillary_file_gridded = (
         spr_gmi_evaluation
@@ -297,8 +330,10 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "gridded"
-        / "ancillary"
-        / "ancillary_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "ancillary_20220101040042.nc"
     )
     ancillary_file_on_swath = (
         spr_gmi_evaluation
@@ -307,18 +342,10 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "evaluation"
         / "conus"
         / "on_swath"
-        / "ancillary"
-        / "ancillary_20230701195312.nc"
-    )
-    target_file = (
-        spr_gmi_evaluation
-        / "spr"
-        / "gmi"
-        / "evaluation"
-        / "conus"
-        / "gridded"
-        / "target"
-        / "target_20230701195312.nc"
+        / "2022"
+        / "01"
+        / "01"
+        / "ancillary_20220101040042.nc"
     )
 
     input_files = InputFiles(

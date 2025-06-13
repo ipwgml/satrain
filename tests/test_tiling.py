@@ -5,6 +5,7 @@ Tests for the ipwgml.tiling module.
 import numpy as np
 import xarray as xr
 
+from ipwgml.data import get_local_files
 from ipwgml.tiling import get_starts_and_clips, DatasetTiler
 
 
@@ -40,9 +41,15 @@ def test_dataset_tiler(spr_gmi_evaluation):
     """
     Ensure that tiling of an xarray.Dataset produces tiles of the expected size.
     """
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "gridded"
-    files = list((ds_path / "target").glob("*.nc"))
-    dataset = xr.load_dataset(files[0])
+    files = get_local_files(
+        dataset_name="spr",
+        reference_sensor="gmi",
+        split="evaluation",
+        domain="conus",
+        geometry="gridded",
+        data_path=spr_gmi_evaluation
+    )
+    dataset = xr.load_dataset(files["target"][0])
 
     tiler = DatasetTiler(dataset, 256, overlap=64)
     for row_ind in range(tiler.n_rows_tiled):
@@ -56,9 +63,15 @@ def test_dataset_tiler_calculate_weights(spr_gmi_evaluation):
     """
     Ensure that tiling an xarray.Dataset and reassembling the tiles reproduces the input data.
     """
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "on_swath"
-    files = list((ds_path / "target").glob("*.nc"))
-    dataset = xr.load_dataset(files[0])
+    files = get_local_files(
+        dataset_name="spr",
+        reference_sensor="gmi",
+        split="evaluation",
+        domain="conus",
+        geometry="on_swath",
+        data_path=spr_gmi_evaluation
+    )
+    dataset = xr.load_dataset(files["target"][0])
     results = dataset.copy(deep=True)
     results.surface_precip.data[:] = 0.0
     results["weights"] = (("scan", "pixel"), np.zeros_like(results.surface_precip.data))
@@ -96,9 +109,18 @@ def test_tiler_trivial(spr_gmi_evaluation):
     Ensure that tiler works even when tile size is None, i.e., the tile extends over the full
     spatial extent of the input data.
     """
-    ds_path = spr_gmi_evaluation / "spr" / "gmi" / "evaluation" / "conus" / "gridded"
-    files = list((ds_path / "target").glob("*.nc"))
-    dataset = xr.load_dataset(files[0])
+    files = get_local_files(
+        dataset_name="spr",
+        reference_sensor="gmi",
+        split="evaluation",
+        domain="conus",
+        geometry="gridded",
+        data_path=spr_gmi_evaluation
+    )
+    dataset = xr.load_dataset(files["target"][0])
+    results = dataset.copy(deep=True)
+    results.surface_precip.data[:] = 0.0
+
     tiler = DatasetTiler(dataset, tile_size=None, overlap=64)
 
     assert tiler.n_rows_tiled == 1
