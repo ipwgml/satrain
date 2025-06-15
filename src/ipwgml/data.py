@@ -7,6 +7,7 @@ Provides functionality to access IPWG ML datasets.
 
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+import gzip
 import json
 import logging
 import multiprocessing
@@ -68,6 +69,23 @@ def get_data_url(dataset_name: str) -> str:
 FILE_REGEXP = re.compile('a href="([\w_]*\.nc)"')
 
 
+def load_json_maybe_gzipped(path: Path):
+    """
+    Loads a JSON file, handling both plain and gzipped (.gz) files.
+
+    Parameters:
+        path: A Path object pointing to the file to read.
+
+    Returns:
+        The deserialized Python object.
+    """
+    filename = path.name
+    open_fn = gzip.open if filename.endswith(".gz") else open
+    mode = 'rt' if filename.endswith(".gz") else 'r'
+    with open_fn(path, mode, encoding='utf-8') as f:
+        return json.load(f)
+
+
 def get_files_in_dataset(dataset_name: str) -> Dict[str, Any]:
     """
     Lists all available files for a given dataset.
@@ -81,11 +99,16 @@ def get_files_in_dataset(dataset_name: str) -> Dict[str, Any]:
     """
     if _TESTING:
         fname = f"files_{dataset_name.lower()}_test.json"
+        path = Path(__file__).parent / "files" / fname
+        if not path.exists():
+            path = Path(__file__).parent / "files" / (fname + ".gz")
     else:
         fname = f"files_{dataset_name.lower()}.json"
+        path = Path(__file__).parent / "files" / fname
+        if not path.exists():
+            path = Path(__file__).parent / "files" / (fname + ".gz")
 
-    path = Path(__file__).parent / "files" / fname
-    files = json.loads(open(path, "r").read())
+    files = load_json_maybe_gzipped(path)
     return files
 
 
@@ -373,8 +396,8 @@ def get_local_files(
                 source_files = [path.relative_to(relative_to) for path in source_files]
             files[source] += source_files
 
-    ref_times = [get_median_time(path) for path in files[reference_sensor]]
-    for source in sources:
+    ref_times = [get_median_time(path) for path in files["target"]]
+    for source in [reference_sensor,] + sources:
         if len(ref_times) == 0 or len(files[source]) == 0:
             continue
         assert set(ref_times) == set([get_median_time(path) for path in files[source]])
