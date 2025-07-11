@@ -72,17 +72,17 @@ def test_parsing():
     assert isinstance(cfg, Ancillary)
 
 
-def test_gmi_input(spr_gmi_gridded_train):
+def test_gmi_input(satrain_gmi_gridded_train):
     """
     Test loading of GMI input data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         geometry="gridded",
         subset="xl",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     gmi_files = files["gmi"]
     target_files = files["target"]
@@ -117,17 +117,17 @@ def test_gmi_input(spr_gmi_gridded_train):
     assert not np.all(obs[valid] > 0.0)
 
 
-def test_ancillary_input(spr_gmi_gridded_train):
+def test_ancillary_input(satrain_gmi_gridded_train):
     """
     Test loading of ancillary input data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         geometry="gridded",
         subset="xl",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     target_files = files["target"]
     anc_files = files["ancillary"]
@@ -142,17 +142,17 @@ def test_ancillary_input(spr_gmi_gridded_train):
     assert inpt_data["ancillary"].shape[0] == cfg.features["ancillary"]
 
 
-def test_geo_ir_input(spr_gmi_gridded_train):
+def test_geo_ir_input(satrain_gmi_gridded_train):
     """
     Test loading of GEO-IR input data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         geometry="gridded",
         subset="xl",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     geo_ir_files = files["geo_ir"]
     target_files = files["target"]
@@ -176,17 +176,17 @@ def test_geo_ir_input(spr_gmi_gridded_train):
     assert cfg.stats is not None
 
 
-def test_geo_input_gridded(spr_gmi_gridded_train):
+def test_geo_input_gridded(satrain_gmi_gridded_train):
     """
     Test loading of GEO input data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         geometry="gridded",
         subset="xl",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     geo_files = files["geo"]
     target_files = files["target"]
@@ -208,18 +208,18 @@ def test_geo_input_gridded(spr_gmi_gridded_train):
     assert inpt_data["obs_geo"].shape[0] == cfg.features["obs_geo"]
 
 
-def test_geo_input_on_swath(spr_gmi_on_swath_train):
+def test_geo_input_on_swath(satrain_gmi_on_swath_train):
     """
     Test loading of GEO input data.
     """
-    ipwgml_path = spr_gmi_on_swath_train
+    ipwgml_path = satrain_gmi_on_swath_train
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         geometry="on_swath",
         subset="xl",
-        data_path=spr_gmi_on_swath_train
+        data_path=satrain_gmi_on_swath_train
     )
     geo_files = files["geo"]
     target_files = files["target"]

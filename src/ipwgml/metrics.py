@@ -569,7 +569,7 @@ class SpectralCoherence(QuantificationMetric):
                 coherence is computed.
             scale: Spatial extent of a single pixel. Defaults to 0.036 degree
                 which is the resolution used for the gridded data of the
-                SPR dataset.
+                SatRain dataset.
         """
         self.window_size = window_size
         self.scale = scale

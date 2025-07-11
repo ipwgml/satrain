@@ -403,6 +403,7 @@ class Ancillary(InputConfig):
             for var in self.variables:
                 data.append(ancillary_data[var].data)
 
+        data = np.stack(data)
         data = normalize(np.stack(data), self.stats, how=self.normalize, nan=self.nan)
         return {"ancillary": data}
 
@@ -557,11 +558,11 @@ class Geo(InputConfig):
         self.channels = channels
 
         if time_steps is None:
-            time_steps = list(range(4))
+            time_steps = list(range(7))
         for time_step in time_steps:
-            if (time_step < 0) or (3 < time_step):
+            if (time_step < 0) or (6 < time_step):
                 raise RuntimeError(
-                    "Time steps for Geo input must be within [0, 3]."
+                    "Time steps for Geo input must be within [0, 6]."
                 )
         self.time_steps = time_steps
         self.nearest = nearest
@@ -607,7 +608,7 @@ class Geo(InputConfig):
             observation from the desired time steps. The returned array will have the
             time and channel dimensions along the leading axes of the array.
         """
-        with open_if_required(geo_data_file) as geo_data:
+        with xr.open_dataset(geo_data_file, cache=False) as geo_data:
             geo_data = geo_data.compute()
             geo_data = geo_data.transpose("time", "channel", ...)[{"channel": self.channels}]
             if self.nearest:
@@ -623,7 +624,11 @@ class Geo(InputConfig):
                 obs = geo_data.observations[{"time": self.time_steps}].data
                 obs = np.reshape(obs, (-1,) + obs.shape[2:])
 
-        obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
+            if self.normalize is not None:
+                obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
+
+        del geo_data
+
         return {"obs_geo": obs}
 
     @property

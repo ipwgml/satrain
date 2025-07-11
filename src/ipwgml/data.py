@@ -51,12 +51,12 @@ def get_data_url(dataset_name: str) -> str:
     Returns the URL from which the IPWGML data can be downloaded.
 
     Args:
-        dataset_name: The name of the dataset ('spr').
+        dataset_name: The name of the dataset ('satrain').
 
     Return:
         A string containing the URL.
     """
-    if dataset_name.lower() == "spr":
+    if dataset_name.lower() == "satrain":
         if _TESTING:
             return "https://rain.atmos.colostate.edu/gprof_nn/ipwgml/.test"
         else:
@@ -91,8 +91,8 @@ def get_files_in_dataset(dataset_name: str) -> Dict[str, Any]:
     Lists all available files for a given dataset.
 
     Args:
-        dataset_name: The name of the dataset, i.e., 'spr' for the satellite
-            precipitation retrieval (SPR) dataset..
+        dataset_name: The name of the dataset, i.e., 'satrain' for the Satellite
+            Rain Estimation and Detection (SatRain) benchmar dataset.
 
     Return:
         A nested dictionary containing all files in the dataset.
@@ -168,11 +168,8 @@ def download_files(
 
     if progress_bar and len(files) > 0:
         progress = Progress(console=ipwgml.logging.get_console())
-        rel_path = "/".join(next(iter(files)).split("/")[:-1])
-        bar = progress.add_task(f"Downloading files from {rel_path}:", total=len(files))
     else:
         progress = None
-        bar = None
 
     while ctr < retries and len(files) > 0:
 
@@ -188,7 +185,7 @@ def download_files(
 
         with progress_bar_or_not(progress_bar=progress_bar) as progress:
             if progress is not None:
-                rel_path = "/".join(next(iter(files)).split("/")[:-1])
+                rel_path = "/".join(next(iter(files)).split("/")[:3])
                 bar = progress.add_task(
                     f"Downloading files from {rel_path}:", total=len(files)
                 )
@@ -236,8 +233,8 @@ def download_missing(
     Download missing file from dataset.
 
     Args:
-        dataset_name: The name of the dataset, i.e., 'spr' for the satellite
-            precipitation retrieval (SPR) dataset..
+        dataset_name: The name of the dataset, i.e., 'satrain' for the Satellite
+            Rain Estimation and Detection (SatRain) dataset.
         reference_sensor: The reference sensor ('gmi' or 'atms')
         geometry: The viewing geometry ('on_swath', or 'gridded')
         split: The name of the data split, i.e., 'training', 'validation',
@@ -259,7 +256,8 @@ def download_missing(
         subset,
         domain,
         data_path=destination,
-        relative_to=destination
+        relative_to=destination,
+        check_consistency=False
     )
     local_files = map(str, local_files.get(source, []))
     all_files = get_files_in_dataset(dataset_name)
@@ -352,7 +350,8 @@ def get_local_files(
         subset: str = "xl",
         domain: str = "conus",
         relative_to: Optional[Path] = None,
-        data_path: Optional[Path] = None
+        data_path: Optional[Path] = None,
+        check_consistency: bool = True
 ) -> Dict[str, Path]:
     """
     Get all locally available files.
@@ -367,6 +366,7 @@ def get_local_files(
         relative_to: If given, file paths will be relative to the given path
             rather than absolute.
         data_path: The root directory containing IPWG data.
+        check_consitency: Whether or not to check consistency of the found files.
 
     Return:
         A dictionary mapping data source names to the corresponding files.
@@ -396,11 +396,13 @@ def get_local_files(
                 source_files = [path.relative_to(relative_to) for path in source_files]
             files[source] += source_files
 
-    ref_times = [get_median_time(path) for path in files["target"]]
-    for source in [reference_sensor,] + sources:
-        if len(ref_times) == 0 or len(files[source]) == 0:
-            continue
-        assert set(ref_times) == set([get_median_time(path) for path in files[source]])
+    if check_consistency:
+        ref_times = [get_median_time(path) for path in files["target"]]
+        for source in [reference_sensor,] + sources:
+            if len(ref_times) == 0 or len(files[source]) == 0:
+                continue
+
+            assert set(ref_times) == set([get_median_time(path) for path in files[source]])
 
     return files
 
@@ -409,21 +411,21 @@ def get_local_files(
 @click.option("--data_path", type=str, default=None)
 @click.option("--reference_sensors", type=str, default=None)
 @click.option("--geometries", type=str, default=None)
-@click.option("--formats", type=str, default=None)
 @click.option("--splits", type=str, default=None)
+@click.option("--subset", type=str, default=None)
 @click.option("--inputs", type=str, default=None)
 def cli(
     data_path: Optional[str] = None,
     reference_sensors: Optional[str] = None,
     geometries: Optional[str] = None,
-    formats: Optional[str] = None,
     splits: Optional[str] = None,
+    subset: Optional[str] = None,
     inputs: Optional[str] = None,
 ):
     """
-    Download the SPR benchmark dataset.
+    Download the SatRain benchmark dataset.
     """
-    dataset = "spr"
+    dataset = "satrain"
 
     if data_path is None:
         data_path = config.get_data_path()
@@ -457,18 +459,6 @@ def cli(
                 )
                 return 1
 
-    if formats is None:
-        formats = FORMATS
-    else:
-        formats = [format.strip() for format in formats.split(",")]
-        for format in formats:
-            if format not in formats:
-                LOGGER.error(
-                    "The format '%s' is currently not supported. Currently supported formats"
-                    f" are {FORMATS}."
-                )
-                return 1
-
     if splits is None:
         splits = SPLITS
     else:
@@ -480,6 +470,16 @@ def cli(
                     f" are {SPLITS}."
                 )
                 return 1
+
+    if subset is None:
+        subset = "xl"
+    else:
+        subset = subset.lower()
+        if subset not in SIZES:
+            LOGGER.error(
+                "%s is not a valid subset. Valid subsets are {SPLITS}."
+            )
+            return 1
 
     if inputs is None:
         inputs = ALL_INPUTS
@@ -495,17 +495,30 @@ def cli(
 
     LOGGER.info(f"Starting data download to {data_path}.")
 
+
     for sensor in reference_sensors:
         for geometry in geometries:
             for inpt in inputs + ["target"]:
-                for fmt in formats:
-                    for split in splits:
-                        if split == "evaluation":
-                            dataset = f"spr/{sensor}/{split}/{geometry}/{inpt}"
-                        else:
-                            dataset = f"spr/{sensor}/{split}/{geometry}/{fmt}/{inpt}"
+                for split in splits:
+
+                    if split == "evaluation":
+                        domains = ["conus"]
+                    else:
+                        domains = [None]
+
+                    for domain in domains:
                         try:
-                            download_missing(dataset, data_path, progress_bar=True)
+                            download_missing(
+                                dataset_name=dataset,
+                                reference_sensor=sensor,
+                                geometry=geometry,
+                                split=split,
+                                source=inpt,
+                                subset=subset,
+                                domain=domain,
+                                destination=data_path,
+                                progress_bar=True,
+                            )
                         except Exception:
                             LOGGER.exception(
                                 f"An  error was encountered when downloading dataset '{dataset}'."

@@ -2,10 +2,10 @@
 ipwgml.evaluation
 =================
 
-Evaluation functionality for the ipwgml SPR dataset.
+Evaluation functionality for the ipwgml SatRain dataset.
 
 This module provides the ``Evaluator`` class that implements a generic
-retrieval evaluator based on the test data split of the IPWG SPR dataset.
+retrieval evaluator based on the test data split of the IPWG SatRain dataset.
 
 The evaluator takes care of downloading the data and loading it in the
 format required by the retrieval. The interface to the retrieval has
@@ -287,7 +287,6 @@ def load_retrieval_input_data(
                 dims = (f"ancillary_features",) + spatial_dims
             else:
                 dims = (f"channels_{inpt.name}",) + spatial_dims
-            print(path)
             data = inpt.load_data(path, target_time=input_data.time)
             for name, arr in data.items():
                 input_data[name] = dims, arr
@@ -674,9 +673,9 @@ def evaluate_scene(
             "hail_fraction",
         ]
 
-        results["surface_precip_ref"] = surface_precip_ref
+        results["surface_precip_ref"] = (("latitude", "longitude"), surface_precip_ref.data)
         for var in [var for var in aux_vars if var in target_data]:
-            results[var] = target_data[var]
+            results[var] = (("latitude", "longitude"), target_data[var].data)
 
         if output_path is not None:
             output_path = Path(output_path)
@@ -690,7 +689,7 @@ def evaluate_scene(
 class Evaluator:
     """
     The Evaluator class provides an interface to evaluate a generic retrieval implemented
-    by a retrieval callback function using the IPWG SPR dataset.
+    by a retrieval callback function using the IPWG SatRain dataset.
     """
 
     def __init__(
@@ -705,7 +704,7 @@ class Evaluator:
     ):
         """
         Args:
-            reference_sensor: The name of SPR reference sensor
+            reference_sensor: The name of SatRain reference sensor
             geometry: The geometry of  the retrieval. 'gridded' for retrievals operating on
                 the regridded input observations; 'on_swath' for retrievals operating on the
                 nativ swath-based observations.
@@ -765,7 +764,7 @@ class Evaluator:
         for source in sources:
             if download:
                 download_missing(
-                    dataset_name="spr",
+                    dataset_name="satrain",
                     reference_sensor=self.reference_sensor,
                     geometry=self.geometry,
                     split="evaluation",
@@ -775,7 +774,7 @@ class Evaluator:
                     progress_bar=True
                 )
         files = get_local_files(
-            dataset_name="spr",
+            dataset_name="satrain",
             reference_sensor=self.reference_sensor,
             geometry=self.geometry,
             split="evaluation",
@@ -788,7 +787,7 @@ class Evaluator:
         for geometry in ["gridded", "on_swath"]:
             if download:
                 download_missing(
-                    dataset_name="spr",
+                    dataset_name="satrain",
                     reference_sensor=self.reference_sensor,
                     geometry=geometry,
                     split="evaluation",
@@ -798,7 +797,7 @@ class Evaluator:
                     progress_bar=True
                 )
             files = get_local_files(
-                dataset_name="spr",
+                dataset_name="satrain",
                 reference_sensor=self.reference_sensor,
                 geometry=geometry,
                 split="evaluation",
@@ -1213,7 +1212,10 @@ class Evaluator:
             lons = target_data.longitude.data
             lats = target_data.latitude.data
             surface_precip_full = target_data.surface_precip.data
-            rqi = target_data.radar_quality_index
+            if "radar_quality_index" in target_data:
+                rqi = target_data.radar_quality_index
+            else:
+                rqi = np.ones_like(results.surface_precip.data)
 
         sp_ret = results.surface_precip.data
         sp_ref = results.surface_precip_ref.data
@@ -1224,6 +1226,11 @@ class Evaluator:
         valid_lons = np.isfinite(sp_ref).any(0)
         lon_min = lons[valid_lons].min()
         lon_max = lons[valid_lons].max()
+
+        lat_min = lats.min()
+        lat_max = lats.max()
+        lon_min = lons.min()
+        lon_max = lons.max()
 
         lon_ticks = np.arange(
             trunc(lons.min() // 5) * 5.0, ceil(lons.max() // 5) * 5 + 1.0, 5.0

@@ -26,7 +26,7 @@ from ipwgml.metrics import Metric, Bias, MSE, CorrelationCoef
 enable_testing()
 
 
-def test_find_files(spr_gmi_evaluation):
+def test_find_files(satrain_gmi_evaluation):
     """
     Ensure that the evaluator find evaluation files.
     """
@@ -35,7 +35,7 @@ def test_find_files(spr_gmi_evaluation):
         "on_swath",
         ["gmi", "ancillary"],
         domain="conus",
-        ipwgml_path=spr_gmi_evaluation,
+        ipwgml_path=satrain_gmi_evaluation,
         download=False,
     )
 
@@ -46,13 +46,13 @@ def test_find_files(spr_gmi_evaluation):
     assert evaluator.target_on_swath is not None
 
 
-def test_load_input_data(spr_gmi_evaluation):
+def test_load_input_data(satrain_gmi_evaluation):
     """
     Test loading of input data for retrieval evaluation.
     """
     target_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -63,8 +63,8 @@ def test_load_input_data(spr_gmi_evaluation):
         / "target_20220101040042.nc"
     )
     target_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -75,8 +75,8 @@ def test_load_input_data(spr_gmi_evaluation):
         / "target_20220101040042.nc"
     )
     gmi_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -87,8 +87,8 @@ def test_load_input_data(spr_gmi_evaluation):
         / "gmi_20220101040042.nc"
     )
     gmi_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -99,8 +99,8 @@ def test_load_input_data(spr_gmi_evaluation):
         / "gmi_20220101040042.nc"
     )
     ancillary_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -111,8 +111,8 @@ def test_load_input_data(spr_gmi_evaluation):
         / "ancillary_20220101040042.nc"
     )
     ancillary_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -123,8 +123,8 @@ def test_load_input_data(spr_gmi_evaluation):
         / "ancillary_20220101040042.nc"
     )
     target_file = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -176,11 +176,11 @@ def test_load_input_data(spr_gmi_evaluation):
 
 
 @pytest.fixture
-def input_data_gridded(spr_gmi_evaluation):
+def input_data_gridded(satrain_gmi_evaluation):
 
     target_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -191,8 +191,8 @@ def input_data_gridded(spr_gmi_evaluation):
         / "target_20220101040042.nc"
     )
     target_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -203,8 +203,8 @@ def input_data_gridded(spr_gmi_evaluation):
         / "target_20220101040042.nc"
     )
     gmi_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -215,8 +215,8 @@ def input_data_gridded(spr_gmi_evaluation):
         / "gmi_20220101040042.nc"
     )
     gmi_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -227,8 +227,8 @@ def input_data_gridded(spr_gmi_evaluation):
         / "gmi_20220101040042.nc"
     )
     ancillary_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -239,8 +239,8 @@ def input_data_gridded(spr_gmi_evaluation):
         / "ancillary_20220101040042.nc"
     )
     ancillary_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -273,11 +273,11 @@ def input_data_gridded(spr_gmi_evaluation):
 
 
 @pytest.fixture
-def input_data_on_swath(spr_gmi_evaluation):
+def input_data_on_swath(satrain_gmi_evaluation):
 
     target_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -288,8 +288,8 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "target_20220101040042.nc"
     )
     target_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -300,8 +300,8 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "target_20220101040042.nc"
     )
     gmi_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -312,8 +312,8 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "gmi_20220101040042.nc"
     )
     gmi_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -324,8 +324,8 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "gmi_20220101040042.nc"
     )
     ancillary_file_gridded = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -336,8 +336,8 @@ def input_data_on_swath(spr_gmi_evaluation):
         / "ancillary_20220101040042.nc"
     )
     ancillary_file_on_swath = (
-        spr_gmi_evaluation
-        / "spr"
+        satrain_gmi_evaluation
+        / "satrain"
         / "gmi"
         / "evaluation"
         / "conus"
@@ -670,7 +670,7 @@ def test_process_tabular(input_data_fixture, request):
 
 
 @pytest.mark.parametrize("geometry", ["gridded"])
-def test_evaluate_scene(geometry, spr_gmi_evaluation, tmp_path):
+def test_evaluate_scene(geometry, satrain_gmi_evaluation, tmp_path):
     """
     Test running evaluation on a single scene with a retrieval returning the reference
     precipitation and ensure that the resulting correlation coefficient is 1.
@@ -680,7 +680,7 @@ def test_evaluate_scene(geometry, spr_gmi_evaluation, tmp_path):
         geometry,
         ["gmi", "ancillary"],
         domain="conus",
-        ipwgml_path=spr_gmi_evaluation,
+        ipwgml_path=satrain_gmi_evaluation,
         download=False,
     )
 
@@ -721,7 +721,7 @@ def test_evaluate_scene(geometry, spr_gmi_evaluation, tmp_path):
 
 
 @pytest.mark.parametrize("geometry", ["gridded"])
-def test_quantification_metrics(geometry, spr_gmi_evaluation, tmp_path):
+def test_quantification_metrics(geometry, satrain_gmi_evaluation, tmp_path):
     """
     Test accessing and setting of quantification metrics.
     """
@@ -730,7 +730,7 @@ def test_quantification_metrics(geometry, spr_gmi_evaluation, tmp_path):
         geometry,
         ["gmi", "ancillary"],
         domain="conus",
-        ipwgml_path=spr_gmi_evaluation,
+        ipwgml_path=satrain_gmi_evaluation,
         download=False,
     )
 
@@ -758,7 +758,7 @@ class RetrievalFn:
 
 
 @pytest.mark.parametrize("geometry", ["gridded"])
-def test_evaluate(geometry, spr_gmi_evaluation, tmp_path):
+def test_evaluate(geometry, satrain_gmi_evaluation, tmp_path):
     """
     Test evaluation over all files.
     """
@@ -767,7 +767,7 @@ def test_evaluate(geometry, spr_gmi_evaluation, tmp_path):
         geometry,
         ["gmi", "ancillary"],
         domain="conus",
-        ipwgml_path=spr_gmi_evaluation,
+        ipwgml_path=satrain_gmi_evaluation,
         download=False,
     )
 

@@ -2,14 +2,14 @@
 ipwg.pytorch.data
 =================
 
-This module provides PyTorch dataset classes for loading the SPR data.
-The :class:`SPRTabular` will load data in tabular format while the
-:class:`SPRSpatial` will load data in spatial format.
+This module provides PyTorch dataset classes for loading the SatRain data.
+The :class:`SatRainTabular` will load data in tabular format while the
+:class:`SatRainSpatial` will load data in spatial format.
 
 """
 
 from datetime import datetime
-from functools import partial
+from functools import cache, partial
 import gc
 from math import ceil
 import multiprocessing
@@ -34,11 +34,11 @@ from ipwgml.utils import get_median_time, extract_samples
 
 
 
-class SPRTabular(Dataset):
+class SatRainTabular(Dataset):
     """
-    Dataset class for SPR data in tabular format.
+    Dataset class for SatRain data in tabular format.
 
-    For efficiency, the SPRTabular data loads all of the training data into memory
+    For efficiency, the SatRainTabular data loads all of the training data into memory
     upon creation and provides the option to perform batching within the dataset
     instead of in the data loader.
     """
@@ -127,7 +127,7 @@ class SPRTabular(Dataset):
             sources = set([inpt.name for inpt in self.retrieval_input] + ["target"])
             for source in sources:
                 download_missing(
-                    dataset_name="spr",
+                    dataset_name="satrain",
                     reference_sensor=self.reference_sensor,
                     geometry=self.geometry,
                     source=source,
@@ -137,7 +137,7 @@ class SPRTabular(Dataset):
                     destination=ipwgml_path
                 )
         files = get_local_files(
-            dataset_name="spr",
+            dataset_name="satrain",
             reference_sensor=self.reference_sensor,
             geometry=self.geometry,
             split=self.split,
@@ -292,7 +292,7 @@ def apply(tensors: Any, transform: torch.Tensor) -> torch.Tensor:
     raise ValueError("Encountered an unsupported type %s in apply.", type(tensors))
 
 
-class SPRSpatial:
+class SatRainSpatial:
     """
     Dataset class providing access to the spatial variant of the satellite precipitation retrieval
     benchmark dataset.
@@ -372,14 +372,15 @@ class SPRSpatial:
         self.geo_ir = None
         self.ancillary = None
         self.target = None
+        self.ipwgml_path = ipwgml_path
 
-        dataset = f"spr/{self.reference_sensor}/{self.split}/{self.geometry}/spatial/"
+        dataset = f"satrain/{self.reference_sensor}/{self.split}/{self.geometry}/spatial/"
 
         if download:
             sources = set([inpt.name for inpt in self.retrieval_input] + ["target"])
             for source in sources:
                 download_missing(
-                    dataset_name="spr",
+                    dataset_name="satrain",
                     reference_sensor=self.reference_sensor,
                     geometry=self.geometry,
                     source=source,
@@ -389,7 +390,7 @@ class SPRSpatial:
                     destination=ipwgml_path
                 )
         files = get_local_files(
-            dataset_name="spr",
+            dataset_name="satrain",
             reference_sensor=self.reference_sensor,
             geometry=self.geometry,
             split=self.split,
@@ -432,17 +433,50 @@ class SPRSpatial:
                     f"Available target times are inconsistent with input files for input {inpt}."
                 )
 
+    @cache
+    def get_source_files(self, source: str) -> np.ndarray:
+        """
+        Get list of source files.
+
+        """
+        files = get_local_files(
+            dataset_name="satrain",
+            reference_sensor=self.reference_sensor,
+            geometry=self.geometry,
+            split=self.split,
+            subset=self.subset,
+            data_path=self.ipwgml_path,
+        )
+        return files[source]
+
+    @cache
+    def get_target_files(self) -> np.ndarray:
+        """
+        Get list of target files.
+        """
+        files = get_local_files(
+            dataset_name="satrain",
+            reference_sensor=self.reference_sensor,
+            geometry=self.geometry,
+            split=self.split,
+            subset=self.subset,
+            data_path=self.ipwgml_path,
+        )
+        return files["target"]
+
+
+    @cache
     def __len__(self) -> int:
         """
         The number of samples in the dataset.
         """
-        return len(self.target)
+        return len(self.get_target_files())
 
     def __getitem__(self, ind: int) -> Tuple[Dict[str, torch.Tensor], torch.Tensor]:
         """
         Load sample from dataset.
         """
-        with xr.load_dataset(self.target[ind]) as data:
+        with xr.open_dataset(self.get_target_files()[ind]) as data:
             target_time = data.time.data
             target = self.target_config.load_reference_precip(data)
             target = torch.tensor(target.astype(np.float32))
@@ -451,7 +485,7 @@ class SPRSpatial:
 
         input_data = {}
         for inpt in self.retrieval_input:
-            files = getattr(self, inpt.name, None)
+            files = self.get_source_files(inpt.name)
             if files is None:
                 continue
             data = inpt.load_data(
@@ -482,5 +516,4 @@ class SPRSpatial:
             input_data = torch.cat(list(input_data.values()), axis=0)
 
         del target_time
-
         return input_data, target

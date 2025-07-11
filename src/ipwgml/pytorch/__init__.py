@@ -95,11 +95,14 @@ class PytorchRetrieval:
 
         with torch.no_grad():
             pred = self.model(inpt)
+            if isinstance(pred, torch.Tensor):
+                pred = {"surface_precip": pred.expected_value()}
+
             results = xr.Dataset()
             if "surface_precip" in pred:
                 results["surface_precip"] = (
                     dims,
-                    pred["surface_precip"].select(feature_dim, 0).cpu().numpy()
+                    pred["surface_precip"].select(feature_dim, 0).float().cpu().numpy()
                 )
             if "probability_of_precip" in pred:
                 pop = pred["probability_of_precip"].select(feature_dim, 0)

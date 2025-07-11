@@ -10,17 +10,17 @@ from ipwgml.data import get_local_files
 from ipwgml.target import TargetConfig
 
 
-def test_load_reference_precip(spr_gmi_gridded_train):
+def test_load_reference_precip(satrain_gmi_gridded_train):
     """
     Test loading of target data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     target_files = files["target"]
 
@@ -70,17 +70,17 @@ def test_load_reference_precip(spr_gmi_gridded_train):
     assert (target_data["snow_fraction"].data[valid] == 0.0).all()
 
 
-def test_load_reference_precip_tabular(spr_gmi_gridded_train):
+def test_load_reference_precip_tabular(satrain_gmi_gridded_train):
     """
     Test loading of target data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     target_files = files["target"]
 
@@ -132,17 +132,17 @@ def test_load_reference_precip_tabular(spr_gmi_gridded_train):
     assert (target_data["snow_fraction"].data[valid] == 0.0).all()
 
 
-def test_load_precip_mask_spatial(spr_gmi_gridded_train):
+def test_load_precip_mask_spatial(satrain_gmi_gridded_train):
     """
     Test loading of target data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     target_files = files["target"]
 
@@ -155,17 +155,17 @@ def test_load_precip_mask_spatial(spr_gmi_gridded_train):
     assert (precip_data[~mask][precip_mask[~mask]] >= 1.0).all()
 
 
-def test_load_precip_mask_tabular(spr_gmi_gridded_train):
+def test_load_precip_mask_tabular(satrain_gmi_gridded_train):
     """
     Test loading of target data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     target_files = files["target"]
 
@@ -180,17 +180,17 @@ def test_load_precip_mask_tabular(spr_gmi_gridded_train):
     assert (precip_data[~mask][precip_mask[~mask]] >= 1.0).all()
 
 
-def test_load_load_heavy_precip_mask_spatial(spr_gmi_gridded_train):
+def test_load_load_heavy_precip_mask_spatial(satrain_gmi_gridded_train):
     """
     Test loading of target data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     target_files = files["target"]
 
@@ -203,17 +203,17 @@ def test_load_load_heavy_precip_mask_spatial(spr_gmi_gridded_train):
     assert (precip_data[~mask][precip_mask[~mask]] >= 11.0).all()
 
 
-def test_load_load_heavy_precip_mask_tabular(spr_gmi_gridded_train):
+def test_load_load_heavy_precip_mask_tabular(satrain_gmi_gridded_train):
     """
     Test loading of target data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
-        data_path=spr_gmi_gridded_train
+        data_path=satrain_gmi_gridded_train
     )
     target_files = files["target"]
 

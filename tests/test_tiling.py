@@ -37,17 +37,17 @@ def test_get_starts_and_clips():
     assert np.all(np.isclose(ass, arr))
 
 
-def test_dataset_tiler(spr_gmi_evaluation):
+def test_dataset_tiler(satrain_gmi_evaluation):
     """
     Ensure that tiling of an xarray.Dataset produces tiles of the expected size.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="evaluation",
         domain="conus",
         geometry="gridded",
-        data_path=spr_gmi_evaluation
+        data_path=satrain_gmi_evaluation
     )
     dataset = xr.load_dataset(files["target"][0])
 
@@ -59,17 +59,17 @@ def test_dataset_tiler(spr_gmi_evaluation):
             assert tile.longitude.size == 256
 
 
-def test_dataset_tiler_calculate_weights(spr_gmi_evaluation):
+def test_dataset_tiler_calculate_weights(satrain_gmi_evaluation):
     """
     Ensure that tiling an xarray.Dataset and reassembling the tiles reproduces the input data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="evaluation",
         domain="conus",
         geometry="on_swath",
-        data_path=spr_gmi_evaluation
+        data_path=satrain_gmi_evaluation
     )
     dataset = xr.load_dataset(files["target"][0])
     results = dataset.copy(deep=True)
@@ -104,18 +104,18 @@ def test_dataset_tiler_calculate_weights(spr_gmi_evaluation):
     assert np.all(np.isclose(results.weights.data, 1.0))
 
 
-def test_tiler_trivial(spr_gmi_evaluation):
+def test_tiler_trivial(satrain_gmi_evaluation):
     """
     Ensure that tiler works even when tile size is None, i.e., the tile extends over the full
     spatial extent of the input data.
     """
     files = get_local_files(
-        dataset_name="spr",
+        dataset_name="satrain",
         reference_sensor="gmi",
         split="evaluation",
         domain="conus",
         geometry="gridded",
-        data_path=spr_gmi_evaluation
+        data_path=satrain_gmi_evaluation
     )
     dataset = xr.load_dataset(files["target"][0])
     results = dataset.copy(deep=True)

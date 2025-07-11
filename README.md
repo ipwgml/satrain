@@ -1,6 +1,6 @@
-# IPWG SPR: A machine-learning-ready benchmark dataset for satellite precipitation estimation
+# IPWG SatRain: A machine-learning-ready benchmark dataset for satellite precipitation estimation
 
-The Satellite Precipitation Retrieval (SPR) benchmark dataset develped by the
+The Satellite Precipitation Retrieval (SatRain) benchmark dataset develped by the
 International Precipitation Working Group (IPWG) is a benchmark dataset for
 machine-learning-based satellite precipitation retrievals, i.e., algorithms for
 detecting and quantifying precipitation from satellite imagery.
