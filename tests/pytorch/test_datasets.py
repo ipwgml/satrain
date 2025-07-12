@@ -4,15 +4,15 @@ Tests for the ipwgml.pytorch.data module.
 
 import torch
 
-from ipwgml.pytorch.datasets import SPRTabular, SPRSpatial
+from ipwgml.pytorch.datasets import SatRainTabular, SatRainSpatial
 
 
-def test_dataset_spr_tabular(spr_gmi_on_swath_train):
+def test_dataset_satrain_tabular(satrain_gmi_on_swath_train):
     """
-    Test loading of tabular data from the SPR dataset.
+    Test loading of tabular data from the SatRain dataset.
     """
-    data_path = spr_gmi_on_swath_train
-    dataset = SPRTabular(
+    data_path = satrain_gmi_on_swath_train
+    dataset = SatRainTabular(
         reference_sensor="gmi",
         geometry="on_swath",
         split="training",
@@ -28,17 +28,17 @@ def test_dataset_spr_tabular(spr_gmi_on_swath_train):
     assert "obs_geo_ir" in x
     assert x["obs_geo_ir"].shape == (16,)
     assert "obs_geo" in x
-    assert x["obs_geo"].shape == (64,)
+    assert x["obs_geo"].shape == (112,)
     assert "ancillary" in x
     assert y.numel() == 1
 
 
-def test_dataset_spr_tabular_stacked(spr_gmi_on_swath_train):
+def test_dataset_satrain_tabular_stacked(satrain_gmi_on_swath_train):
     """
-    Test loading of tabular data from the SPR dataset.
+    Test loading of tabular data from the SatRain dataset.
     """
-    data_path = spr_gmi_on_swath_train
-    dataset = SPRTabular(
+    data_path = satrain_gmi_on_swath_train
+    dataset = SatRainTabular(
         reference_sensor="gmi",
         geometry="on_swath",
         split="training",
@@ -54,13 +54,13 @@ def test_dataset_spr_tabular_stacked(spr_gmi_on_swath_train):
     assert y.numel() == 1
 
 
-def test_dataset_spr_tabular_batched(spr_gmi_on_swath_train):
+def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
     """
-    Test loading of tabular data from the SPR dataset with batching.
+    Test loading of tabular data from the SatRain dataset with batching.
     """
     batch_size = 1024
-    data_path = spr_gmi_on_swath_train
-    dataset = SPRTabular(
+    data_path = satrain_gmi_on_swath_train
+    dataset = SatRainTabular(
         reference_sensor="gmi",
         geometry="on_swath",
         split="training",
@@ -76,11 +76,11 @@ def test_dataset_spr_tabular_batched(spr_gmi_on_swath_train):
             assert "obs_gmi" in x
             assert x["obs_gmi"].shape == (batch_size, 13)
             assert x["obs_geo_ir"].shape == (batch_size, 16)
-            assert x["obs_geo"].shape == (batch_size, 64)
+            assert x["obs_geo"].shape == (batch_size, 112)
             assert "ancillary" in x
             assert y.numel() == batch_size
 
-    dataset = SPRTabular(
+    dataset = SatRainTabular(
         reference_sensor="gmi",
         geometry="on_swath",
         split="training",
@@ -107,12 +107,12 @@ def test_dataset_spr_tabular_batched(spr_gmi_on_swath_train):
             assert y.numel() == batch_size
 
 
-def test_dataset_spr_spatial(spr_gmi_gridded_train):
+def test_dataset_satrain_spatial(satrain_gmi_gridded_train):
     """
-    Test loading of tabular data from the SPR dataset.
+    Test loading of tabular data from the SatRain dataset.
     """
-    data_path = spr_gmi_gridded_train
-    dataset = SPRSpatial(
+    data_path = satrain_gmi_gridded_train
+    dataset = SatRainSpatial(
         reference_sensor="gmi",
         geometry="gridded",
         split="training",
@@ -129,12 +129,12 @@ def test_dataset_spr_spatial(spr_gmi_gridded_train):
     assert y.shape == (256, 256)
 
 
-def test_dataset_spr_spatial_stacked(spr_gmi_gridded_train):
+def test_dataset_satrain_spatial_stacked(satrain_gmi_gridded_train):
     """
-    Test loading of tabular data from the SPR dataset.
+    Test loading of tabular data from the SatRain dataset.
     """
-    data_path = spr_gmi_gridded_train
-    dataset = SPRSpatial(
+    data_path = satrain_gmi_gridded_train
+    dataset = SatRainSpatial(
         reference_sensor="gmi",
         geometry="gridded",
         split="training",

@@ -283,21 +283,13 @@ def load_retrieval_input_data(
     for inpt in retrieval_input:
         path = input_files.get_path(inpt.name, geometry)
         if path is not None:
-            if inpt.name == "ancillary":
-                dims = (f"ancillary_features",) + spatial_dims
-            else:
-                dims = (f"channels_{inpt.name}",) + spatial_dims
+            dims = (f"features_{inpt.name}",) + spatial_dims
             data = inpt.load_data(path, target_time=input_data.time)
             for name, arr in data.items():
                 input_data[name] = dims, arr
-
-    anc_file = input_files.get_path("ancillary", geometry)
-    with xr.open_dataset(anc_file, engine="h5netcdf") as anc_data:
-        for name, attr in anc_data.attrs.items():
-            if name == "pmw_input_file":
-                input_data.attrs["gpm_input_file"] = attr
-            else:
-                input_data.attrs[name] = attr
+            if inpt.name in ["gmi", "atms"]:
+                with xr.open_dataset(path) as data:
+                    input_data.attrs.update(data.attrs)
 
     ancillary_file = input_files.get_path("ancillary", geometry)
     ancillary_data = xr.load_dataset(ancillary_file, engine="h5netcdf")
@@ -1226,11 +1218,6 @@ class Evaluator:
         valid_lons = np.isfinite(sp_ref).any(0)
         lon_min = lons[valid_lons].min()
         lon_max = lons[valid_lons].max()
-
-        lat_min = lats.min()
-        lat_max = lats.max()
-        lon_min = lons.min()
-        lon_max = lons.max()
 
         lon_ticks = np.arange(
             trunc(lons.min() // 5) * 5.0, ceil(lons.max() // 5) * 5 + 1.0, 5.0

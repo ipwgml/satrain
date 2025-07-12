@@ -608,7 +608,7 @@ class Geo(InputConfig):
             observation from the desired time steps. The returned array will have the
             time and channel dimensions along the leading axes of the array.
         """
-        with xr.open_dataset(geo_data_file, cache=False) as geo_data:
+        with open_if_required(geo_data_file) as geo_data:
             geo_data = geo_data.compute()
             geo_data = geo_data.transpose("time", "channel", ...)[{"channel": self.channels}]
             if self.nearest:

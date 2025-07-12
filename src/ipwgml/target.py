@@ -38,7 +38,7 @@ class TargetConfig:
     """
 
     target: str = "surface_precip"
-    min_rqi: float = 1.0
+    min_rqi: float = 0.9
     min_valid_fraction: float = 1.0
     no_snow: bool = True
     no_hail: bool = False
@@ -48,8 +48,8 @@ class TargetConfig:
     def __init__(
         self,
         target: str = "surface_precip",
-        min_rqi: float = 1.0,
-        min_valid_fraction: float = 1.0,
+        min_rqi: float = 0.9,
+        min_valid_fraction: float = 0.9,
         no_snow: bool = False,
         no_hail: bool = False,
         min_gcf: Optional[float] = None,
@@ -108,12 +108,14 @@ class TargetConfig:
             valid = np.ones_like(target, dtype=bool)
 
             # Allow for numerical inaccuracies to avoid noisy masks for min_rqi = 1.0.
-            rqi = data["radar_quality_index"].data
-            valid *= (rqi - self.min_rqi) > -1e-3
+            if "radar_quality_index" in data:
+                rqi = data["radar_quality_index"].data
+                valid *= (rqi - self.min_rqi) > -1e-3
 
             # Allow for numerical inaccuracies to avoid noisy masks for min_valid_fraction = 1.0.
-            valid_frac = data["valid_fraction"].data
-            valid *= valid_frac - self.min_valid_fraction > -1e-3
+            if "valid_fraction" in data:
+                valid_frac = data["valid_fraction"].data
+                valid *= valid_frac - self.min_valid_fraction > -1e-3
 
             if self.no_snow:
                 snow_frac = data["snow_fraction"].data

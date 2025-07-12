@@ -186,7 +186,7 @@ class SatRainTabular(Dataset):
                     )
                 input_data = extract_samples(xr.load_dataset(files[inpt.name][ind]), valid)
                 if "time" in input_data.coords:
-                    input_data = input_data.reset_index("time", drop=True)
+                    input_data = input_data.reset_index("time")
                 getattr(self, inpt.name + "_data").append(input_data)
 
         self.target_data = xr.concat(self.target_data, dim="samples")

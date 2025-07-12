@@ -60,7 +60,7 @@ def test_load_input_data(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "target_20220101040042.nc"
+        / "target_20220101022714.nc"
     )
     target_file_on_swath = (
         satrain_gmi_evaluation
@@ -72,7 +72,7 @@ def test_load_input_data(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "target_20220101040042.nc"
+        / "target_20220101022714.nc"
     )
     gmi_file_gridded = (
         satrain_gmi_evaluation
@@ -84,7 +84,7 @@ def test_load_input_data(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "gmi_20220101040042.nc"
+        / "gmi_20220101022714.nc"
     )
     gmi_file_on_swath = (
         satrain_gmi_evaluation
@@ -96,7 +96,7 @@ def test_load_input_data(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "gmi_20220101040042.nc"
+        / "gmi_20220101022714.nc"
     )
     ancillary_file_gridded = (
         satrain_gmi_evaluation
@@ -108,7 +108,7 @@ def test_load_input_data(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "ancillary_20220101040042.nc"
+        / "ancillary_20220101022714.nc"
     )
     ancillary_file_on_swath = (
         satrain_gmi_evaluation
@@ -120,7 +120,7 @@ def test_load_input_data(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "ancillary_20220101040042.nc"
+        / "ancillary_20220101022714.nc"
     )
     target_file = (
         satrain_gmi_evaluation
@@ -132,7 +132,7 @@ def test_load_input_data(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "target_20220101040042.nc"
+        / "target_20220101022714.nc"
     )
 
     input_files = InputFiles(
@@ -188,7 +188,7 @@ def input_data_gridded(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "target_20220101040042.nc"
+        / "target_20220101022714.nc"
     )
     target_file_on_swath = (
         satrain_gmi_evaluation
@@ -200,7 +200,7 @@ def input_data_gridded(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "target_20220101040042.nc"
+        / "target_20220101022714.nc"
     )
     gmi_file_gridded = (
         satrain_gmi_evaluation
@@ -212,7 +212,7 @@ def input_data_gridded(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "gmi_20220101040042.nc"
+        / "gmi_20220101022714.nc"
     )
     gmi_file_on_swath = (
         satrain_gmi_evaluation
@@ -224,7 +224,7 @@ def input_data_gridded(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "gmi_20220101040042.nc"
+        / "gmi_20220101022714.nc"
     )
     ancillary_file_gridded = (
         satrain_gmi_evaluation
@@ -236,7 +236,7 @@ def input_data_gridded(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "ancillary_20220101040042.nc"
+        / "ancillary_20220101022714.nc"
     )
     ancillary_file_on_swath = (
         satrain_gmi_evaluation
@@ -248,7 +248,7 @@ def input_data_gridded(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "ancillary_20220101040042.nc"
+        / "ancillary_20220101022714.nc"
     )
 
     input_files = InputFiles(
@@ -285,7 +285,7 @@ def input_data_on_swath(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "target_20220101040042.nc"
+        / "target_20220101022714.nc"
     )
     target_file_on_swath = (
         satrain_gmi_evaluation
@@ -297,7 +297,7 @@ def input_data_on_swath(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "target_20220101040042.nc"
+        / "target_20220101022714.nc"
     )
     gmi_file_gridded = (
         satrain_gmi_evaluation
@@ -309,7 +309,7 @@ def input_data_on_swath(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "gmi_20220101040042.nc"
+        / "gmi_20220101022714.nc"
     )
     gmi_file_on_swath = (
         satrain_gmi_evaluation
@@ -321,7 +321,7 @@ def input_data_on_swath(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "gmi_20220101040042.nc"
+        / "gmi_20220101022714.nc"
     )
     ancillary_file_gridded = (
         satrain_gmi_evaluation
@@ -333,7 +333,7 @@ def input_data_on_swath(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "ancillary_20220101040042.nc"
+        / "ancillary_20220101022714.nc"
     )
     ancillary_file_on_swath = (
         satrain_gmi_evaluation
@@ -345,7 +345,7 @@ def input_data_on_swath(satrain_gmi_evaluation):
         / "2022"
         / "01"
         / "01"
-        / "ancillary_20220101040042.nc"
+        / "ancillary_20220101022714.nc"
     )
 
     input_files = InputFiles(
@@ -649,7 +649,7 @@ def test_process_tabular(input_data_fixture, request):
         """
         inputs.append(input_data)
         results = input_data[["obs_gmi"]].copy(deep=True)
-        results = results[{"channels_gmi": 0}].rename(obs_gmi="surface_precip")
+        results = results[{"features_gmi": 0}].rename(obs_gmi="surface_precip")
         return results
 
     results = process_scene_tabular(

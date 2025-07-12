@@ -46,7 +46,7 @@ class DummyRetrieval(nn.Module):
 
 
 @pytest.mark.parametrize("geometry", ["gridded", "on_swath"])
-def test_evaluate_tabular(geometry, spr_gmi_evaluation, tmp_path):
+def test_evaluate_tabular(geometry, satrain_gmi_evaluation, tmp_path):
     """
     Test evaluation over all files.
     """
@@ -56,7 +56,7 @@ def test_evaluate_tabular(geometry, spr_gmi_evaluation, tmp_path):
         geometry,
         retrieval_input,
         domain="conus",
-        ipwgml_path=spr_gmi_evaluation,
+        ipwgml_path=satrain_gmi_evaluation,
         download=False
     )
 
@@ -77,7 +77,7 @@ def test_evaluate_tabular(geometry, spr_gmi_evaluation, tmp_path):
 
 
 @pytest.mark.parametrize("geometry", ["gridded", "on_swath"])
-def test_evaluate_tabular(geometry, spr_gmi_evaluation, tmp_path):
+def test_evaluate_tabular(geometry, satrain_gmi_evaluation, tmp_path):
     """
     Test evaluation over all files.
     """
@@ -87,7 +87,7 @@ def test_evaluate_tabular(geometry, spr_gmi_evaluation, tmp_path):
         geometry,
         retrieval_input,
         domain="conus",
-        ipwgml_path=spr_gmi_evaluation,
+        ipwgml_path=satrain_gmi_evaluation,
         download=False
     )
 

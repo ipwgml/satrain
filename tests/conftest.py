@@ -11,7 +11,7 @@ enable_testing()
 
 
 @pytest.fixture(scope="session")
-def spr_gmi_gridded_train(tmp_path_factory):
+def satrain_gmi_gridded_train(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval benchmark data for GMI with
     gridded geometry.
@@ -19,7 +19,7 @@ def spr_gmi_gridded_train(tmp_path_factory):
     dest = tmp_path_factory.mktemp("ipwgml")
     for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:
         download_missing(
-            dataset_name="spr",
+            dataset_name="satrain",
             reference_sensor="gmi",
             geometry="gridded",
             split="training",
@@ -30,7 +30,7 @@ def spr_gmi_gridded_train(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def spr_gmi_on_swath_train(tmp_path_factory):
+def satrain_gmi_on_swath_train(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval benchmark data for GMI with
     on_swath geometry.
@@ -38,7 +38,7 @@ def spr_gmi_on_swath_train(tmp_path_factory):
     dest = tmp_path_factory.mktemp("ipwgml")
     for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:
         download_missing(
-            dataset_name="spr",
+            dataset_name="satrain",
             reference_sensor="gmi",
             geometry="on_swath",
             split="training",
@@ -49,22 +49,24 @@ def spr_gmi_on_swath_train(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def spr_gmi_on_swath_train_dataset(tmp_path_factory):
+def satrain_gmi_on_swath_train_dataset(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval benchmark data for GMI with
     on_swath geometry.
     """
+    dest = tmp_path_factory.mktemp("ipwgml")
     return download_dataset(
-        "spr",
+        "satrain",
         "gmi",
         ["gmi"],
         split="training",
         geometry="on_swath",
+        data_path=dest
     )
 
 
 @pytest.fixture(scope="session")
-def spr_gmi_evaluation(tmp_path_factory):
+def satrain_gmi_evaluation(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval evaluation data for GMI.
     """
@@ -72,7 +74,7 @@ def spr_gmi_evaluation(tmp_path_factory):
     for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:
         for geometry in ["gridded", "on_swath"]:
             download_missing(
-                dataset_name="spr",
+                dataset_name="satrain",
                 reference_sensor="gmi",
                 geometry=geometry,
                 split="evaluation",

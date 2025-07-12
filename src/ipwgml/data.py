@@ -58,9 +58,9 @@ def get_data_url(dataset_name: str) -> str:
     """
     if dataset_name.lower() == "satrain":
         if _TESTING:
-            return "https://rain.atmos.colostate.edu/gprof_nn/ipwgml/.test"
+            return "https://rain.atmos.colostate.edu/ipwgml/.test"
         else:
-            return "https://rain.atmos.colostate.edu/gprof_nn/ipwgml/"
+            return "https://rain.atmos.colostate.edu/ipwgml/"
     raise ValueError(
         f"Unknown dataset name: {dataset_name}"
     )
@@ -284,6 +284,7 @@ def download_dataset(
         geometry: str,
         domain: str = "conus",
         subset: str = "xl",
+        data_path: Optional[Union[str, Path]] = None
 ) -> Dict[str, List[Path]]:
     """
     Download IPWGML dataset and return list of local files.
@@ -294,12 +295,18 @@ def download_dataset(
         input_data: The input data sources for which to download the data.
         split: Which split of the data to download.
         geometry: For which retrieval geometry to download the data.
+        domain: Name of the evaluation domain (optional).
+        subset: The subset to download (xs, s, m, l, xl).
+        data_path: Optional path pointing to the local data path.
 
     Return:
         A dictionary listing locally available files for each input data
         source and the target data.
     """
-    data_path = config.get_data_path()
+    if data_path is None:
+        data_path = config.get_data_path()
+    else:
+        data_path = Path(data_path)
 
     download_missing(
         dataset_name,

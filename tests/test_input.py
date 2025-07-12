@@ -242,7 +242,7 @@ def test_geo_input_on_swath(satrain_gmi_on_swath_train):
     assert (inpt_data["obs_geo"] > 100).any()
 
     # Ensure that input is normalized.
-    inpt = {"name": "geo", "nearest": True, "normalize": "minmax"}
+    inpt = {"name": "geo", "nearest": True, "normalize": "minmax", "nan": -1.5}
     cfg = InputConfig.parse(inpt)
     target_data = xr.load_dataset(target_files[0])
     inpt_data = cfg.load_data(geo_files[0], target_time=target_data.time)
@@ -258,7 +258,7 @@ def test_calculate_input_features():
     """
     inputs = [
         {"name": "gmi", "include_angles": True, "channels": [0, 3, 5]},
-        {"name": "ancillary", "variables": ["two_meter_temperature", "land_fraction"]},
+        {"name": "ancillary", "variables": ["two_meter_temperature", "surface_type"]},
         {"name": "geo_ir", "time_steps": [8, 9, 10, 11]},
         {"name": "geo", "time_steps": [1, 2], "channels": [0, 1, 2]},
     ]
