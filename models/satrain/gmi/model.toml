@@ -1,0 +1,64 @@
+name = "gprof_ir_ss_small"
+
+[architecture]
+name = "EncoderDecoder"
+
+[architecture.encoder]
+channels = [29, 58, 77, 154, 192, 307]
+downsampling_factors = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 2]]
+stage_depths = [1, 1, 2, 2, 3, 4]
+block_factory = [
+    "InvertedBottleneck",
+    "InvertedBottleneck",
+    "InvertedBottleneck",
+    "InvertedBottleneck",
+    "InvertedBottleneck",
+    "InvertedBottleneck",
+]
+block_factory_args = [
+    {expansion_factor=1, normalization_factory="LayerNormFirst", activation_factory="GELU", excitation_ratio=0.0, fused=true, anti_aliasing=false},
+    {expansion_factor=4, normalization_factory="LayerNormFirst", activation_factory="GELU", excitation_ratio=0.0, fused=true, anti_aliasing=false},
+    {expansion_factor=4, normalization_factory="LayerNormFirst", activation_factory="GELU", excitation_ratio=0.0, fused=true, anti_aliasing=false},
+    {expansion_factor=4, normalization_factory="LayerNormFirst", activation_factory="GELU", excitation_ratio=0.0, anti_aliasing=false},
+    {expansion_factor=6, normalization_factory="LayerNormFirst", activation_factory="GELU", excitation_ratio=0.0, anti_aliasing=false},
+    {expansion_factor=6, normalization_factory="LayerNormFirst", activation_factory="GELU", excitation_ratio=0.0, anti_aliasing=false},
+]
+aggregation_factory = "Linear"
+
+[architecture.decoder]
+channels = [192, 154, 77, 58]
+upsampling_factors = [[2, 2], [2, 2], [2, 2], [2, 2]]
+upsampling_factory = "Bilinear"
+stage_depths = [3, 2, 1, 1]
+block_factory = [
+    "InvertedBottleneck",
+    "InvertedBottleneck",
+    "InvertedBottleneck",
+    "InvertedBottleneck",
+]
+block_factory_args = [
+    {expansion_factor=6, normalization_factory="LayerNormFirst", excitation_ratio=0.0, anti_aliasing=false},
+    {expansion_factor=4, normalization_factory="LayerNormFirst", excitation_ratio=0.0, anti_aliasing=false},
+    {expansion_factor=4, normalization_factory="LayerNormFirst", excitation_ratio=0.0, fused=true, anti_aliasing=false},
+    {expansion_factor=4, normalization_factory="LayerNormFirst", excitation_ratio=0.0, fused=true, anti_aliasing=false},
+]
+skip_connections=true
+
+[architecture.stem]
+kind = "BasicConv"
+kernel_size = [3, 3]
+
+[architecture.head]
+individual = false
+kind = "BasicConv"
+depth = 3
+activation_factory = "GELU"
+normalization_factory = "LayerNormFirst"
+
+[input.obs_gmi]
+n_features=13
+normalize="minmax"
+
+[output.surface_precip]
+kind = "Quantiles"
+quantiles = [0.01, 0.03225806, 0.06451613, 0.09677419, 0.12903226, 0.16129032, 0.19354839, 0.22580645, 0.25806452, 0.29032258, 0.32258065, 0.35483871, 0.38709677, 0.41935484, 0.4516129 , 0.48387097, 0.51612903, 0.5483871 , 0.58064516, 0.61290323, 0.64516129, 0.67741935, 0.70967742, 0.74193548, 0.77419355, 0.80645161, 0.83870968, 0.87096774, 0.90322581, 0.93548387, 0.96774194, 0.99]

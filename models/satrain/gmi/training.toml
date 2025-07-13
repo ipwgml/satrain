@@ -1,0 +1,56 @@
+[stage_1]
+n_epochs = 20
+optimizer = "AdamW"
+optimizer_args = {lr = 5e-4}
+#sequence_length = 16
+scene_size = 256
+dataset_module = "ipwgml.pytorch.datasets"
+training_dataset = "SatRainSpatial"
+input_datasets = ["merged_ir"]
+reference_datasets = ["gpm"]
+batch_size = 16
+metrics = ["Bias", "MSE", "CorrelationCoef", "PlotSamples"]
+scheduler = "CosineAnnealingLR"
+scheduler_args = {T_max=20}
+n_data_loader_workers = 4
+
+[stage_1.training_dataset_args]
+reference_sensor = "gmi"
+geometry = "gridded"
+split = "training"
+retrieval_input = [{name="gmi", normalize="minmax", nan=-2.0}]
+
+[stage_1.validation_dataset_args]
+reference_sensor = "gmi"
+geometry = "gridded"
+split = "training"
+retrieval_input = [{name="gmi", normalize="minmax", nan=-2.0}]
+
+[stage_2]
+n_epochs = 40
+optimizer = "AdamW"
+optimizer_args = {lr = 5e-4}
+#sequence_length = 16
+scene_size = 256
+dataset_module = "ipwgml.pytorch.datasets"
+training_dataset = "SatRainSpatial"
+input_datasets = ["merged_ir"]
+reference_datasets = ["gpm"]
+batch_size = 16
+metrics = ["Bias", "MSE", "CorrelationCoef", "PlotSamples"]
+scheduler = "CosineAnnealingLR"
+scheduler_args = {T_max=20}
+n_data_loader_workers = 4
+
+[stage_2.training_dataset_args]
+reference_sensor = "gmi"
+geometry = "gridded"
+split = "training"
+retrieval_input = [{name="gmi", normalize="minmax", nan=-2.0}]
+
+[stage_2.validation_dataset_args]
+reference_sensor = "gmi"
+geometry = "gridded"
+split = "training"
+retrieval_input = [{name="gmi", normalize="minmax", nan=-2.0}]
+
