@@ -1,4 +1,4 @@
-name = "gprof_ir_ss_small"
+name = "ipwgml_geo_ir"
 
 [architecture]
 name = "EncoderDecoder"
@@ -26,11 +26,12 @@ block_factory_args = [
 aggregation_factory = "Linear"
 
 [architecture.decoder]
-channels = [192, 154, 77, 58]
-upsampling_factors = [[2, 2], [2, 2], [2, 2], [2, 2]]
+channels = [192, 154, 77, 64, 64]
+upsampling_factors = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 2]]
 upsampling_factory = "Bilinear"
-stage_depths = [3, 2, 1, 1]
+stage_depths = [3, 2, 1, 1, 1]
 block_factory = [
+    "InvertedBottleneck",
     "InvertedBottleneck",
     "InvertedBottleneck",
     "InvertedBottleneck",
@@ -41,6 +42,7 @@ block_factory_args = [
     {expansion_factor=4, normalization_factory="LayerNormFirst", excitation_ratio=0.0, anti_aliasing=false},
     {expansion_factor=4, normalization_factory="LayerNormFirst", excitation_ratio=0.0, fused=true, anti_aliasing=false},
     {expansion_factor=4, normalization_factory="LayerNormFirst", excitation_ratio=0.0, fused=true, anti_aliasing=false},
+    {expansion_factor=1, normalization_factory="LayerNormFirst", excitation_ratio=0.0, fused=true, anti_aliasing=false},
 ]
 skip_connections=true
 
@@ -55,9 +57,8 @@ depth = 3
 activation_factory = "GELU"
 normalization_factory = "LayerNormFirst"
 
-[input.obs_gmi]
-n_features=13
-normalize="minmax"
+[input.obs_geo_ir]
+n_features=1
 
 [output.surface_precip]
 kind = "Quantiles"
