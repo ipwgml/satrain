@@ -404,12 +404,12 @@ def get_local_files(
             files[source] += source_files
 
     if check_consistency:
-        ref_times = [get_median_time(path) for path in files["target"]]
+        ref_times = set([get_median_time(path) for path in files["target"]])
         for source in [reference_sensor,] + sources:
             if len(ref_times) == 0 or len(files[source]) == 0:
                 continue
-
-            assert set(ref_times) == set([get_median_time(path) for path in files[source]])
+            source_times = set([get_median_time(path) for path in files[source]])
+            assert ref_times == source_times
 
     return files
 

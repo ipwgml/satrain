@@ -9,7 +9,7 @@ The :class:`SatRainTabular` will load data in tabular format while the
 """
 
 from datetime import datetime
-from functools import cache, partial
+from functools import cache, cached_property, partial
 import gc
 from math import ceil
 import multiprocessing
@@ -353,10 +353,10 @@ class SatRainSpatial:
         self.split = split
         self.subset = subset
 
-        self.manager = multiprocessing.Manager()
         if retrieval_input is None:
             retrieval_input = ALL_INPUTS
-        self.retrieval_input = self.manager.list(parse_retrieval_inputs(retrieval_input))
+        self._retrieval_input = retrieval_input
+        retrieval_input = parse_retrieval_inputs(retrieval_input)
 
         if target_config is None:
             target_config = TargetConfig()
@@ -377,7 +377,7 @@ class SatRainSpatial:
         dataset = f"satrain/{self.reference_sensor}/{self.split}/{self.geometry}/spatial/"
 
         if download:
-            sources = set([inpt.name for inpt in self.retrieval_input] + ["target"])
+            sources = set([inpt.name for inpt in retrieval_input] + ["target"])
             for source in sources:
                 download_missing(
                     dataset_name="satrain",
@@ -426,12 +426,16 @@ class SatRainSpatial:
             available for the target.
         """
         target_times = set(map(get_median_time, self.target))
-        for inpt in self.retrieval_input:
+        for inpt in parse_retrieval_inputs(self._retrieval_input):
             inpt_times = set(map(get_median_time, getattr(self, inpt.name)))
             if target_times != inpt_times:
                 raise RuntimeError(
                     f"Available target times are inconsistent with input files for input {inpt}."
                 )
+
+    @cached_property
+    def retrieval_input(self):
+        return parse_retrieval_inputs(self._retrieval_input)
 
     @cache
     def get_source_files(self, source: str) -> np.ndarray:
@@ -476,7 +480,7 @@ class SatRainSpatial:
         """
         Load sample from dataset.
         """
-        with xr.open_dataset(self.get_target_files()[ind]) as data:
+        with xr.open_dataset(self.get_target_files()[ind], chunks=None, cache=False) as data:
             target_time = data.time.data
             target = self.target_config.load_reference_precip(data)
             target = torch.tensor(target.astype(np.float32))

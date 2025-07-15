@@ -253,26 +253,28 @@ class PMW(InputConfig):
             is 'True' the dictionary will also containg the earth-incidence angles with the
             key 'eia_<sensor_name>'.
         """
-        if isinstance(pmw_data_file, xr.Dataset):
-            pmw_data = pmw_data_file
-        else:
-            pmw_data = xr.load_dataset(pmw_data_file)
-        pmw_data = pmw_data[["observations", "earth_incidence_angle"]].transpose("channel", ...)
-        if self.channels is not None:
-            pmw_data = pmw_data[{"channel": self.channels}]
-        else:
-            pmw_data = pmw_data[{"channel": slice(0, None)}]
+        with open_if_required(pmw_data_file) as pmw_data:
+            pmw_data = pmw_data[["observations", "earth_incidence_angle"]].compute().transpose("channel", ...)
+            obs = pmw_data["observations"].compute().transpose("channel", ...)
+            if self.channels is not None:
+                obs = obs[{"channel": self.channels}]
+            else:
+                obs = obs[{"channel": slice(0, None)}]
 
-        obs = pmw_data["observations"].data
-        obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
+            obs = obs.data
+            obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
 
-        inpt_data = {
-            f"obs_{self.name}": obs
-        }
-        if self.include_angles:
-            angs = pmw_data["earth_incidence_angle"].data
-            angs = normalize(angs, self.ang_stats, how=self.normalize, nan=self.nan)
-            inpt_data[f"eia_{self.name}"] = angs
+            inpt_data = {
+                f"obs_{self.name}": obs
+            }
+            if self.include_angles:
+                angs = pmw_data["earth_incidence_angle"].compute().transpose("channel", ...)
+                if self.channels is not None:
+                    angs = angs[{"channel": self.channels}]
+                else:
+                    angs = angs[{"channel": slice(0, None)}]
+                angs = normalize(angs.data, self.ang_stats, how=self.normalize, nan=self.nan)
+                inpt_data[f"eia_{self.name}"] = angs
 
         return inpt_data
 
