@@ -39,11 +39,11 @@ def test_download_files_satrain_gmi_on_swath_train(satrain_gmi_gridded_train):
         files = get_local_files("satrain", "gmi", "on_swath", "training", data_path=satrain_gmi_gridded_train)
         assert len(files) == 5
 
-def test_download_files_satrain_gmi_evaluation(satrain_gmi_evaluation):
+def test_download_files_satrain_gmi_evaluation(satrain_gmi_testing):
     """
     Ensure that fixture successfully downloaded files.
     """
-    files = get_local_files("satrain", "gmi", "on_swath", "evaluation", domain="conus", data_path=satrain_gmi_evaluation)
+    files = get_local_files("satrain", "gmi", "on_swath", "testing", domain="conus", data_path=satrain_gmi_testing)
     for source in ["gmi", "ancillary", "geo_ir", "target"]:
         assert len(files[source]) == 1
 

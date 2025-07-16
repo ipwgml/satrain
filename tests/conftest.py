@@ -66,7 +66,7 @@ def satrain_gmi_on_swath_train_dataset(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def satrain_gmi_evaluation(tmp_path_factory):
+def satrain_gmi_testing(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval evaluation data for GMI.
     """
@@ -77,7 +77,7 @@ def satrain_gmi_evaluation(tmp_path_factory):
                 dataset_name="satrain",
                 reference_sensor="gmi",
                 geometry=geometry,
-                split="evaluation",
+                split="testing",
                 domain="conus",
                 source=source,
                 destination=dest

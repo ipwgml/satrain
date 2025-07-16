@@ -36,6 +36,6 @@ ALL_INPUTS = ["gmi", "geo", "geo_ir", "ancillary"]
 
 REFERENCE_SENSORS = ["gmi"]
 GEOMETRIES = ["gridded", "on_swath"]
-SPLITS = ["training", "validation", "testing", "evaluation"]
+SPLITS = ["training", "validation", "testing"]
 SIZES = ["xs", "s", "m", "l", "xl"]
 DOMAINS = ["austria", "conus", "korea"]

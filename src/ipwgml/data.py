@@ -58,9 +58,9 @@ def get_data_url(dataset_name: str) -> str:
     """
     if dataset_name.lower() == "satrain":
         if _TESTING:
-            return "https://rain.atmos.colostate.edu/ipwgml/.test"
+            return "https://rain.atmos.colostate.edu/ipwgml2/.test"
         else:
-            return "https://rain.atmos.colostate.edu/ipwgml/"
+            return "https://rain.atmos.colostate.edu/ipwgml2/"
     raise ValueError(
         f"Unknown dataset name: {dataset_name}"
     )
@@ -237,11 +237,10 @@ def download_missing(
             Rain Estimation and Detection (SatRain) dataset.
         reference_sensor: The reference sensor ('gmi' or 'atms')
         geometry: The viewing geometry ('on_swath', or 'gridded')
-        split: The name of the data split, i.e., 'training', 'validation',
-            'testing', or 'evaluation'
+        split: The name of the data split, i.e., 'training', 'validation', or 'testing'.
         subset: The subset, i.e, 'xs', 's', 'm', 'l', or 'xl'; only relevant
             for 'training', 'validation', or 'testing' splits.
-        domain: The name of the domain for the 'evaluation' split.
+        domain: The name of the test domain. Only relevant if split='testing'.
         destination: Path pointing to the local directory containing the IPWGML data.
         progress_base: Whether or not display a progress bar displaying the download progress.
 
@@ -261,7 +260,7 @@ def download_missing(
     )
     local_files = map(str, local_files.get(source, []))
     all_files = get_files_in_dataset(dataset_name)
-    if split.lower() == "evaluation":
+    if split.lower() == "testing":
         all_files = all_files[reference_sensor][split][domain][geometry][source]
     else:
         all_files = all_files[reference_sensor][split][subset][geometry][source]
@@ -295,7 +294,7 @@ def download_dataset(
         input_data: The input data sources for which to download the data.
         split: Which split of the data to download.
         geometry: For which retrieval geometry to download the data.
-        domain: Name of the evaluation domain (optional).
+        domain: Name of the test domain (optional).
         subset: The subset to download (xs, s, m, l, xl).
         data_path: Optional path pointing to the local data path.
 
@@ -367,9 +366,8 @@ def get_local_files(
         reference_sensor: The name of the referene sensor.
         geometry: The viewing geometry.
         split: The split name.
-        subset: The subset name (only relevant for training, validation,
-             and testing splits).
-        domain: The domain name (only relevant for evaluation split).
+        subset: The subset name (only relevant for training and validation splits).
+        domain: The domain name (only relevant for testing split).
         relative_to: If given, file paths will be relative to the given path
             rather than absolute.
         data_path: The root directory containing IPWG data.
@@ -387,7 +385,7 @@ def get_local_files(
     sources = ["ancillary", "geo", "geo_ir", "target"]
     for source in [reference_sensor,] + sources:
         files[source] = []
-        if split != "evaluation":
+        if split != "testing":
             for size_ind in range(SIZES.index(subset) + 1):
                 rel_path = f"{dataset_name}/{reference_sensor}/{split}/{SIZES[size_ind]}/{geometry}/"
                 split_path = data_path / rel_path
@@ -408,8 +406,10 @@ def get_local_files(
         for source in [reference_sensor,] + sources:
             if len(ref_times) == 0 or len(files[source]) == 0:
                 continue
+            ref_times = set(ref_times)
             source_times = set([get_median_time(path) for path in files[source]])
-            assert ref_times == source_times
+            print(ref_times.symmetric_difference(source_times))
+            assert set(ref_times) == set([get_median_time(path) for path in files[source]])
 
     return files
 
@@ -508,7 +508,7 @@ def cli(
             for inpt in inputs + ["target"]:
                 for split in splits:
 
-                    if split == "evaluation":
+                    if split == "testing":
                         domains = ["conus"]
                     else:
                         domains = [None]

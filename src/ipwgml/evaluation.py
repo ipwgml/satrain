@@ -759,7 +759,7 @@ class Evaluator:
                     dataset_name="satrain",
                     reference_sensor=self.reference_sensor,
                     geometry=self.geometry,
-                    split="evaluation",
+                    split="testing",
                     source=source,
                     domain=self.domain,
                     destination=ipwgml_path,
@@ -769,7 +769,7 @@ class Evaluator:
             dataset_name="satrain",
             reference_sensor=self.reference_sensor,
             geometry=self.geometry,
-            split="evaluation",
+            split="testing",
             domain=self.domain,
             data_path=ipwgml_path
         )
@@ -782,7 +782,7 @@ class Evaluator:
                     dataset_name="satrain",
                     reference_sensor=self.reference_sensor,
                     geometry=geometry,
-                    split="evaluation",
+                    split="testing",
                     source="target",
                     domain=self.domain,
                     destination=ipwgml_path,
@@ -792,7 +792,7 @@ class Evaluator:
                 dataset_name="satrain",
                 reference_sensor=self.reference_sensor,
                 geometry=geometry,
-                split="evaluation",
+                split="testing",
                 domain=self.domain,
                 data_path=ipwgml_path
             )
@@ -937,7 +937,7 @@ class Evaluator:
 
     def __len__(self) -> int:
         """
-        The number of collocations available for evaluation.
+        The number of collocations available for testing.
         """
         return len(self.target_gridded)
 
@@ -1007,7 +1007,7 @@ class Evaluator:
         output_path: Optional[Path] = None,
     ) -> xr.Dataset:
         """
-        Run evaluation on a single scene.
+        Run tests on a single scene.
 
         Args:
             index: An index identifying the scene.
@@ -1068,7 +1068,7 @@ class Evaluator:
         output_path: Optional[Path] = None,
     ):
         """
-        Run evaluation on complete evaluation dataset.
+        Run evaluation on complete test dataset.
 
         Args:
             retrieval_fn: The retrieval callback function.
