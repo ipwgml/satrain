@@ -774,7 +774,8 @@ class Evaluator:
             data_path=ipwgml_path
         )
         for name, source_files in files.items():
-            setattr(self, name + "_" + self.geometry, source_files)
+            if len(source_files) > 0:
+                setattr(self, name + "_" + self.geometry, source_files)
 
         for geometry in ["gridded", "on_swath"]:
             if download:
@@ -1158,6 +1159,8 @@ class Evaluator:
         overlap: int | None = None,
         batch_size: int | None = None,
         swath_boundaries: bool = False,
+        ax_width: int = 5,
+        contour_legend: bool = True
     ) -> "plt.Figure":
         """
         Plot retrieval results for a given retrieval scene.
@@ -1172,6 +1175,8 @@ class Evaluator:
             batch_size: Maximum batch size for tiled spatial and tabular retrievals.
             swath_boundaries: If 'True' will plot swath boundaries of the GPM
                 reference_sensor.
+            ax_width: The width of each axes objects in inches.
+            contour_legend: Whether or not to draw a legend for the radar boundary contours.
         """
         try:
             from ipwgml.plotting import add_ticks, scale_bar
@@ -1186,19 +1191,26 @@ class Evaluator:
 
         rqi_levels = [0.5, 0.9]
 
-        results = self.evaluate_scene(
-            index=scene_index,
-            tile_size=tile_size,
-            overlap=overlap,
-            batch_size=batch_size,
-            retrieval_fn=retrieval_fn,
-            input_data_format=input_data_format,
-            track=False,
-        )
+        if not isinstance(retrieval_fn, dict):
+            retrieval_fn = {"Retrieved": retrieval_fn}
+
+        results = {
+            name: self.evaluate_scene(
+                index=scene_index,
+                tile_size=tile_size,
+                overlap=overlap,
+                batch_size=batch_size,
+                retrieval_fn=ret_fn,
+                input_data_format=input_data_format,
+                track=False,
+            ) for name, ret_fn in retrieval_fn.items()
+        }
 
         fname = self.target_gridded[scene_index].name
         median_time = fname.split("_")[-1][:-3]
         date = datetime.strptime(median_time, "%Y%m%d%H%M%S")
+
+        res_1 = next(iter(results.values()))
 
         with xr.open_dataset(self.target_gridded[scene_index], engine="h5netcdf") as target_data:
             lons = target_data.longitude.data
@@ -1207,10 +1219,10 @@ class Evaluator:
             if "radar_quality_index" in target_data:
                 rqi = target_data.radar_quality_index
             else:
-                rqi = np.ones_like(results.surface_precip.data)
+                rqi = np.ones_like(res_1.surface_precip.data)
 
-        sp_ret = results.surface_precip.data
-        sp_ref = results.surface_precip_ref.data
+        sp_ret = res_1.surface_precip.data
+        sp_ref = res_1.surface_precip_ref.data
 
         valid_lats = np.isfinite(sp_ref).any(1)
         lat_min = lats[valid_lats].min()
@@ -1227,14 +1239,13 @@ class Evaluator:
         )
 
         crs = ccrs.PlateCarree()
-        fig = plt.figure(figsize=(12, 6))
-        gs = GridSpec(2, 3, width_ratios=[1.0, 1.0, 0.075], height_ratios=[1.0, 0.1])
+        fig = plt.figure(figsize=((len(results) + 1) * ax_width + 1, 6))
+        gs = GridSpec(2, len(results) + 2, width_ratios=[1.0] * (len(results) + 1) + [0.075], height_ratios=[1.0, 0.1])
         norm = LogNorm(1e-1, 1e2)
 
         mask = np.isnan(sp_ref)
 
         # Reference data
-
         ax = fig.add_subplot(gs[0, 0], projection=crs)
         m = ax.pcolormesh(
             lons,
@@ -1244,9 +1255,9 @@ class Evaluator:
             norm=norm,
         )
         cntr = ax.contour(
-            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey"
+            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidth=0.5
         )
-        ax.set_title("(b) Reference", loc="left")
+        ax.set_title("(a) Reference", loc="left")
         add_ticks(ax, lon_ticks, lat_ticks, left=False, bottom=True)
         ax.coastlines()
         if swath_boundaries:
@@ -1269,33 +1280,36 @@ class Evaluator:
         scale_bar(ax, sb_len, border=0.1, height=0.018)
 
         # Retrieved data
+        for ind, (name, res) in enumerate(results.items()):
 
-        ax = fig.add_subplot(gs[0, 1], projection=crs)
-        ax.pcolormesh(lons, lats, np.maximum(sp_ret, 1e-3), cmap=cmap_precip, norm=norm)
-        ax.contour(
-            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey"
-        )
-        ax.set_title("(a) Retrieved", loc="left")
-        add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
-        ax.set_xlim(lon_min, lon_max)
-        ax.set_ylim(lat_min, lat_max)
-        ax.coastlines()
+            sp_ret = res.surface_precip.data
+            ax = fig.add_subplot(gs[0, ind + 1], projection=crs)
+            ax.pcolormesh(lons, lats, np.maximum(sp_ret, 1e-3), cmap=cmap_precip, norm=norm)
+            ax.contour(
+                lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey"
+            )
+            ax.set_title(f"({chr(ord('b') + ind)}) {name}", loc="left")
+            add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
+            ax.set_xlim(lon_min, lon_max)
+            ax.set_ylim(lat_min, lat_max)
+            ax.coastlines()
 
-        if swath_boundaries:
-            pixel_inds = target_data.pixel_index
-            ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
+            if swath_boundaries:
+                pixel_inds = target_data.pixel_index
+                ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
 
 
         fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-        cax = fig.add_subplot(gs[0, 2])
+        cax = fig.add_subplot(gs[0, -1])
         plt.colorbar(m, cax=cax, label="Surface precipitation [mm h$^{-1}$]")
 
-        handles, labels = cntr.legend_elements()
-        labels = [label.replace("x", "RQI") for label in labels]
-        ax = fig.add_subplot(gs[1, :])
-        ax.set_axis_off()
-        ax.legend(handles=handles, labels=labels, ncol=2, loc="center")
+        if contour_legend:
+            handles, labels = cntr.legend_elements()
+            labels = [label.replace("x", "RQI") for label in labels]
+            ax = fig.add_subplot(gs[1, :])
+            ax.set_axis_off()
+            ax.legend(handles=handles, labels=labels, ncol=2, loc="center")
 
         return fig
 
