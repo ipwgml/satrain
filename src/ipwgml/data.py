@@ -408,7 +408,6 @@ def get_local_files(
                 continue
             ref_times = set(ref_times)
             source_times = set([get_median_time(path) for path in files[source]])
-            print(ref_times.symmetric_difference(source_times))
             assert set(ref_times) == set([get_median_time(path) for path in files[source]])
 
     return files
