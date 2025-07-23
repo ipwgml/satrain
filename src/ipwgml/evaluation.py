@@ -1058,6 +1058,31 @@ class Evaluator:
             output_path=output_path,
         )
 
+    def evaluate_scene_no_results(
+        self,
+        index: int,
+        tile_size: int | Tuple[int, int] | None,
+        overlap: int | None,
+        batch_size: int | None,
+        retrieval_fn: Callable[[xr.Dataset], xr.Dataset],
+        input_data_format: str,
+        track: bool = False,
+        output_path: Optional[Path] = None,
+    ) -> xr.Dataset:
+        """
+        Wrapper around evaluate_scene that discards the return value.
+        """
+        self.evaluate_scene(
+            index,
+            tile_size,
+            overlap,
+            batch_size,
+            retrieval_fn,
+            input_data_format,
+            track=track,
+            output_path=output_path
+        )
+
     def evaluate(
         self,
         retrieval_fn: Callable[[xr.Dataset], xr.Dataset],
@@ -1091,16 +1116,6 @@ class Evaluator:
                 description="Evaluating retrieval",
                 console=ipwgml.logging.get_console(),
             ):
-                self.evaluate_scene(
-                    index=scene_ind,
-                    tile_size=tile_size,
-                    overlap=overlap,
-                    batch_size=batch_size,
-                    retrieval_fn=retrieval_fn,
-                    input_data_format=input_data_format,
-                    track=True,
-                    output_path=output_path,
-                )
                 try:
                     self.evaluate_scene(
                         index=scene_ind,
@@ -1124,7 +1139,7 @@ class Evaluator:
             for scene_ind in range(len(self)):
                 tasks.append(
                     pool.submit(
-                        self.evaluate_scene,
+                        self.evaluate_scene_no_results,
                         index=scene_ind,
                         tile_size=tile_size,
                         overlap=overlap,
