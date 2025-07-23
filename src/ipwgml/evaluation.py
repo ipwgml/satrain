@@ -1160,7 +1160,10 @@ class Evaluator:
         batch_size: int | None = None,
         swath_boundaries: bool = False,
         ax_width: int = 5,
-        contour_legend: bool = True
+        contour_legend: bool = True,
+        include_metrics: bool = False,
+        n_rows: int = 1
+
     ) -> "plt.Figure":
         """
         Plot retrieval results for a given retrieval scene.
@@ -1177,6 +1180,7 @@ class Evaluator:
                 reference_sensor.
             ax_width: The width of each axes objects in inches.
             contour_legend: Whether or not to draw a legend for the radar boundary contours.
+            include_metrics: Whether or not to print metrics onto retrieval results.
         """
         try:
             from ipwgml.plotting import add_ticks, scale_bar
@@ -1239,8 +1243,15 @@ class Evaluator:
         )
 
         crs = ccrs.PlateCarree()
-        fig = plt.figure(figsize=((len(results) + 1) * ax_width + 1, 6))
-        gs = GridSpec(2, len(results) + 2, width_ratios=[1.0] * (len(results) + 1) + [0.075], height_ratios=[1.0, 0.1])
+        n_cols = ceil((len(results) + 1) / n_rows)
+        fig = plt.figure(figsize=(n_cols * ax_width + 1, 4 * n_rows + 1))
+        gs = GridSpec(
+            n_rows + 1,
+            n_cols + 1,
+            width_ratios=[1.0] * n_cols + [0.075],
+            height_ratios=[1.0] * n_rows + [0.1],
+            wspace=0.1
+        )
         norm = LogNorm(1e-1, 1e2)
 
         mask = np.isnan(sp_ref)
@@ -1258,7 +1269,7 @@ class Evaluator:
             lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidth=0.5
         )
         ax.set_title("(a) Reference", loc="left")
-        add_ticks(ax, lon_ticks, lat_ticks, left=False, bottom=True)
+        add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
         ax.coastlines()
         if swath_boundaries:
             pixel_inds = target_data.pixel_index
@@ -1282,14 +1293,17 @@ class Evaluator:
         # Retrieved data
         for ind, (name, res) in enumerate(results.items()):
 
+            row_ind = (ind + 1) // n_cols
+            col_ind = (ind + 1) % n_cols
+            ax = fig.add_subplot(gs[row_ind, col_ind], projection=crs)
+
             sp_ret = res.surface_precip.data
-            ax = fig.add_subplot(gs[0, ind + 1], projection=crs)
             ax.pcolormesh(lons, lats, np.maximum(sp_ret, 1e-3), cmap=cmap_precip, norm=norm)
             ax.contour(
                 lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey"
             )
             ax.set_title(f"({chr(ord('b') + ind)}) {name}", loc="left")
-            add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
+            add_ticks(ax, lon_ticks, lat_ticks, left=col_ind == 0, bottom=row_ind == n_rows - 1)
             ax.set_xlim(lon_min, lon_max)
             ax.set_ylim(lat_min, lat_max)
             ax.coastlines()
@@ -1298,16 +1312,25 @@ class Evaluator:
                 pixel_inds = target_data.pixel_index
                 ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
 
+            if include_metrics:
+                valid = np.isfinite(sp_ret) * np.isfinite(sp_ref)
+                corr = np.corrcoef(sp_ret[valid], sp_ref[valid])[0, 1]
+                mse = ((sp_ret[valid] - sp_ref[valid]) ** 2).mean()
+                mae = np.abs(sp_ret[valid] - sp_ref[valid]).mean()
+                bias = 100.0 * (sp_ret[valid] - sp_ref[valid]).mean() / sp_ref[valid].mean()
+                metrics = f"Bias: {bias:.2f} %\nCorr.: {corr:.2f}\nMSE: {mse:.2f}"
+                ax.text(0.05, 0.1, metrics, transform=ax.transAxes, ha='left', va='center', fontsize=12, color='deeppink')
 
-        fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"))
 
-        cax = fig.add_subplot(gs[0, -1])
+        fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"), fontsize=16)
+
+        cax = fig.add_subplot(gs[:-1, -1])
         plt.colorbar(m, cax=cax, label="Surface precipitation [mm h$^{-1}$]")
 
         if contour_legend:
             handles, labels = cntr.legend_elements()
             labels = [label.replace("x", "RQI") for label in labels]
-            ax = fig.add_subplot(gs[1, :])
+            ax = fig.add_subplot(gs[-1, :])
             ax.set_axis_off()
             ax.legend(handles=handles, labels=labels, ncol=2, loc="center")
 
