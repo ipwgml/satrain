@@ -987,9 +987,11 @@ class PRCurve(ProbabilisticDetectionMetric):
             recall = self.n_tp / self.n_t
 
         valid = (self.n_tp + self.n_fp) > 0
-
-        inds = np.argsort(recall[valid])
-        auc = np.trapz(precision[valid][inds], x=recall[valid][inds])
+        if not valid.any():
+            auc = np.nan
+        else:
+            inds = np.argsort(recall[valid])
+            auc = np.trapz(precision[valid][inds], x=recall[valid][inds])
 
         results = xr.Dataset(
             {
