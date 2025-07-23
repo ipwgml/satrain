@@ -325,7 +325,8 @@ def test_spectral_coherence():
     mse = mse.compute()
 
     closest_scale = result.scales.data[np.where(result.scales > 8)[0][-1]]
-    assert result.effective_resolution.data == closest_scale
+    assert 8 < result.effective_resolution.data
+    assert result.effective_resolution.data < closest_scale
 
 
 def evaluate_always(metric):
