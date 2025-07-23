@@ -24,7 +24,7 @@ holds the metrics to track in its ``precip_quantification_metrics``,
 
 .. code-block:: Python
 
-   evaluator.precip_quantification_metrics = [EffectiveResolution()] # Track only bias
+   evaluator.precip_quantification_metrics = [Bias()] # Track only bias
    evaluator.precip_detection_metrics = [POD()] # Track only POD
    evaluator.prob_precip_detection_metrics = [PRCurve()] # Track only PR curve
    evaluator.heavy_precip_detection_metrics = [POD()] # Track only POD
@@ -679,7 +679,22 @@ class SpectralCoherence(QuantificationMetric):
         if len(resolved) == 0:
             res = np.inf
         else:
-            res = scales[1:][inds][resolved[0]]
+            ind_right = resolved[0]
+            ind_left = ind_right
+            if 0 < ind_right:
+                ind_left = ind_right - 1
+
+            # Determine the effective resolution using linear interpolation.
+            scale_left = scales[1:][inds][ind_left]
+            scale_right = scales[1:][inds][ind_right]
+            co_left = coherence[1:][inds][ind_left]
+            co_right = coherence[1:][inds][ind_right]
+
+            d_scl = scale_right - scale_left
+            d_co = co_right - co_left
+            frac_dist = (np.sqrt(1 / 2) - d_co) / d_co
+
+            res = scale_left + d_scl * frac_dist
 
         results = xr.Dataset(
             {
