@@ -148,6 +148,10 @@ def test_load_input_data(satrain_gmi_testing):
         None,
         None,
         None,
+        None,
+        None,
+        None,
+        None,
     )
 
     input_data = load_retrieval_input_data(
@@ -264,6 +268,10 @@ def input_data_gridded(satrain_gmi_testing):
         None,
         None,
         None,
+        None,
+        None,
+        None,
+        None,
     )
 
     input_data = load_retrieval_input_data(
@@ -357,6 +365,10 @@ def input_data_on_swath(satrain_gmi_testing):
         None,
         ancillary_file_gridded,
         ancillary_file_on_swath,
+        None,
+        None,
+        None,
+        None,
         None,
         None,
         None,

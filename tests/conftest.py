@@ -30,6 +30,44 @@ def satrain_gmi_gridded_train(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
+def satrain_atms_gridded_train(tmp_path_factory):
+    """
+    Fixture to download satellite-precipitation retrieval benchmark data for ATMS with
+    gridded geometry.
+    """
+    dest = tmp_path_factory.mktemp("ipwgml")
+    for source in ["atms", "target", "geo_ir", "geo", "ancillary"]:
+        download_missing(
+            dataset_name="satrain",
+            reference_sensor="atms",
+            geometry="gridded",
+            split="training",
+            source=source,
+            destination=dest
+        )
+    return dest
+
+
+@pytest.fixture(scope="session")
+def satrain_atms_on_swath_train(tmp_path_factory):
+    """
+    Fixture to download satellite-precipitation retrieval benchmark data for ATMS with
+    on_swath geometry.
+    """
+    dest = tmp_path_factory.mktemp("ipwgml")
+    for source in ["atms", "target", "geo_ir", "geo", "ancillary"]:
+        download_missing(
+            dataset_name="satrain",
+            reference_sensor="atms",
+            geometry="on_swath",
+            split="training",
+            source=source,
+            destination=dest
+        )
+    return dest
+
+
+@pytest.fixture(scope="session")
 def satrain_gmi_on_swath_train(tmp_path_factory):
     """
     Fixture to download satellite-precipitation retrieval benchmark data for GMI with
@@ -66,9 +104,46 @@ def satrain_gmi_on_swath_train_dataset(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
+def satrain_atms_on_swath_train_dataset(tmp_path_factory):
+    """
+    Fixture to download satellite-precipitation retrieval benchmark data for ATMS with
+    on_swath geometry.
+    """
+    dest = tmp_path_factory.mktemp("ipwgml")
+    return download_dataset(
+        "satrain",
+        "atms",
+        ["atms"],
+        split="training",
+        geometry="on_swath",
+        data_path=dest
+    )
+
+
+@pytest.fixture(scope="session")
+def satrain_atms_testing(tmp_path_factory):
+    """
+    Fixture to download SatRain test data for ATMS.
+    """
+    dest = tmp_path_factory.mktemp("ipwgml")
+    for source in ["atms", "target", "geo_ir", "geo", "ancillary"]:
+        for geometry in ["gridded", "on_swath"]:
+            download_missing(
+                dataset_name="satrain",
+                reference_sensor="atms",
+                geometry=geometry,
+                split="testing",
+                domain="conus",
+                source=source,
+                destination=dest
+            )
+    return dest
+
+
+@pytest.fixture(scope="session")
 def satrain_gmi_testing(tmp_path_factory):
     """
-    Fixture to download satellite-precipitation retrieval evaluation data for GMI.
+    Fixture to download SatRain test data for GMI.
     """
     dest = tmp_path_factory.mktemp("ipwgml")
     for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:

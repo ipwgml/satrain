@@ -3,14 +3,13 @@ Tests for the ipwgml.data module.
 """
 import os
 
+import pytest
 
 from ipwgml.data import (
     enable_testing,
     get_files_in_dataset,
     get_local_files
 )
-
-
 
 
 def test_get_files_in_dataset():
@@ -23,35 +22,46 @@ def test_get_files_in_dataset():
     assert len(files["gmi"]["training"]["xl"]["gridded"]["gmi"]) > len(files["gmi"]["training"]["l"]["gridded"]["gmi"])
 
 
-def test_download_files_satrain_gmi_gridded_train(satrain_gmi_gridded_train):
+@pytest.mark.parametrize("sensor_and_fixture", [["gmi", "satrain_gmi_gridded_train"], ["atms", "satrain_atms_gridded_train"]])
+def test_download_files_satrain_gmi_gridded_train(request, sensor_and_fixture):
     """
     Ensure that fixture successfully downloaded files.
     """
-    for source in ["gmi", "ancillary", "geo_ir", "target"]:
-        files = get_local_files("satrain", "gmi", "gridded", "training", data_path=satrain_gmi_gridded_train)
-        assert len(files) == 5
+    sensor, fixture = sensor_and_fixture
+    data_path = request.getfixturevalue(fixture)
+    for source in [sensor, "ancillary", "geo_ir", "target"]:
+        files = get_local_files("satrain", sensor, "gridded", "training", data_path=data_path)
+        assert len(files) == 7
 
-def test_download_files_satrain_gmi_on_swath_train(satrain_gmi_gridded_train):
+@pytest.mark.parametrize("sensor_and_fixture", [["gmi", "satrain_gmi_on_swath_train"], ["atms", "satrain_atms_on_swath_train"]])
+def test_download_files_satrain_gmi_on_swath_train(request, sensor_and_fixture):
     """
     Ensure that fixture successfully downloaded files.
     """
-    for source in ["gmi", "ancillary", "geo_ir", "target"]:
-        files = get_local_files("satrain", "gmi", "on_swath", "training", data_path=satrain_gmi_gridded_train)
-        assert len(files) == 5
+    sensor, fixture = sensor_and_fixture
+    data_path = request.getfixturevalue(fixture)
+    for source in [sensor, "ancillary", "geo_ir", "target"]:
+        files = get_local_files("satrain", sensor, "on_swath", "training", data_path=data_path)
+        assert len(files) == 7
 
-def test_download_files_satrain_gmi_evaluation(satrain_gmi_testing):
+@pytest.mark.parametrize("sensor_and_fixture", [["gmi", "satrain_gmi_testing"], ["atms", "satrain_atms_testing"]])
+def test_download_files_satrain_gmi_testing(request, sensor_and_fixture):
     """
     Ensure that fixture successfully downloaded files.
     """
-    files = get_local_files("satrain", "gmi", "on_swath", "testing", domain="conus", data_path=satrain_gmi_testing)
-    for source in ["gmi", "ancillary", "geo_ir", "target"]:
+    sensor, fixture = sensor_and_fixture
+    data_path = request.getfixturevalue(fixture)
+    files = get_local_files("satrain", sensor, "on_swath", "testing", domain="conus", data_path=data_path)
+    for source in [sensor, "ancillary", "geo_ir", "target"]:
         assert len(files[source]) == 1
 
 
-def test_download_satrain_gmi_dataset(satrain_gmi_on_swath_train_dataset):
+@pytest.mark.parametrize("sensor_and_fixture", [["gmi", "satrain_gmi_on_swath_train_dataset"], ["atms", "satrain_atms_on_swath_train_dataset"]])
+def test_download_satrain_gmi_dataset(request, sensor_and_fixture):
     """
     Ensure that download dataset function
     """
-    files = satrain_gmi_on_swath_train_dataset
-    assert len(files["gmi"]) == 5
+    sensor, fixture = sensor_and_fixture
+    files = request.getfixturevalue(fixture)
+    assert len(files[sensor]) == 5
     assert len(files["target"]) == 5

@@ -49,6 +49,7 @@ Members
 """
 from abc import ABC, abstractproperty
 from copy import copy
+from functools import cached_property
 from pathlib import Path
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Union
@@ -148,12 +149,18 @@ class InputConfig(ABC):
 
         if name.lower() == "gmi":
             return GMI(**kwargs)
+        if name.lower() == "atms":
+            return ATMS(**kwargs)
         elif name.lower() == "ancillary":
             return Ancillary(**kwargs)
         elif name.lower() == "geo":
             return Geo(**kwargs)
+        elif name.lower() == "geo_t":
+            return GeoT(**kwargs)
         elif name.lower() == "geo_ir":
             return GeoIR(**kwargs)
+        elif name.lower() == "geo_ir_t":
+            return GeoIRT(**kwargs)
         raise RuntimeError(
             f"Provided retrieval input name '{name}' is not known."
         )
@@ -216,17 +223,16 @@ class PMW(InputConfig):
         self._obs_stats = None
         self._ang_stats = None
 
-    @property
+    @cached_property
     def stats(self) -> xr.Dataset:
         """
         xarray.Dataset containing summary statistics for the input.
         """
-        if self._obs_stats is None:
-            stats_file = Path(__file__).parent / "files" / "stats" / f"obs_{self.name}.nc"
-            self._obs_stats = xr.load_dataset(stats_file, engine="h5netcdf")
-            if self.channels is not None:
-                self._obs_stats = self._obs_stats[{"features": self.channels}]
-        return self._obs_stats
+        stats_file = Path(__file__).parent / "files" / "stats" / f"obs_{self.name}.nc"
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")
+        if self.channels is not None:
+                stats = stats[{"features": self.channels}]
+        return stats
 
     @property
     def ang_stats(self) -> xr.Dataset:
@@ -277,6 +283,64 @@ class PMW(InputConfig):
                 inpt_data[f"eia_{self.name}"] = angs
 
         return inpt_data
+
+
+@dataclass
+class ATMS(PMW):
+    """
+    Retrieval input data from the Advanced Technology Microwave Sounder (ATMS).
+
+    The ATMS class represents observations from the Advanced Technology Microwave Sounder as
+    retrieval input data. It allows for selecting subsets of the available ATMS
+    channels and including or excluding the earth-incidence angles in the input data.
+
+    The ATMS input will load tensors 'obs_atms' containing the ATMS passive microwave
+    observations and, if 'include_angles' is set to 'True', 'eia_atms' containing the
+    earth incidence angles corresponding to the observations in 'obs_atms'.
+    """
+    def __init__(
+            self,
+            channels: Optional[List[int]] = None,
+            include_angles: bool = True,
+            normalize: Optional[str] = None,
+            nan: Optional[str] = None
+    ):
+        """
+        Args:
+            channels: An optional list of zero-based indices identifying channels to
+                load. If 'None', all channels will be loaded.
+            include_angles: Wether or not to include the earth-incidence angles of the
+                observations in the input.
+            normalize: An optional string specifying how to normalize the input data.
+            nan: An optional float value that will be used to replace missing values
+                in the input data.
+        """
+        self.channels = channels
+        self.include_angles = include_angles
+        self.normalize = normalize
+        self.nan = nan
+        self._obs_stats = None
+        self._ang_stats = None
+
+    @property
+    def name(self) -> str:
+        return "atms"
+
+    @property
+    def features(self) -> Dict[str, int]:
+        """
+        Dictionary mapping the input names from the ATMS input to the corresponding
+        number of channels.
+        """
+        n_chans = 9
+        if self.channels is not None:
+            n_chans = len(self.channels)
+
+        features = {"obs_atms": n_chans}
+        if self.include_angles:
+            features["eia_atms"] = n_chans
+
+        return features
 
 
 @dataclass
@@ -337,6 +401,8 @@ class GMI(PMW):
         return features
 
 
+
+
 @dataclass
 class Ancillary(InputConfig):
     """
@@ -371,22 +437,20 @@ class Ancillary(InputConfig):
         self.variables = variables
         self.normalize = normalize
         self.nan = nan
-        self._stats = None
 
     @property
     def name(self) -> str:
         return "ancillary"
 
-    @property
+    @cached_property
     def stats(self) -> xr.Dataset:
         """
         xarray.Dataset containing summary statistics for the input.
         """
-        if self._stats is None:
-            stats_file = Path(__file__).parent / "files" / "stats" / "ancillary.nc"
-            inds = [ind for ind, var in enumerate(ANCILLARY_VARIABLES) if var in self.variables]
-            self._stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": inds}]
-        return self._stats
+        stats_file = Path(__file__).parent / "files" / "stats" / "ancillary.nc"
+        inds = [ind for ind, var in enumerate(ANCILLARY_VARIABLES) if var in self.variables]
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": inds}]
+        return stats
 
     def load_data(self, ancillary_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
         """
@@ -421,6 +485,68 @@ class Ancillary(InputConfig):
 @dataclass
 class GeoIR(InputConfig):
     """
+    The GeoIR loads input data from IR-window channel observations interpolated in time to
+    be closest to the nominal time of the precipitation estimates.
+    """
+    def __init__(
+            self,
+            normalize: Optional[str] = None,
+            nan: Optional[float] = None
+    ):
+        """
+        Args:
+            normalize: An optional string specifying how to normalize the input data.
+            nan: An optional float value that will be used to replace missing values
+                in the input data.
+        """
+        self.normalize = normalize
+        self.nan = nan
+
+    @property
+    def name(self) -> str:
+        return "geo_ir"
+
+    @cached_property
+    def stats(self) -> xr.Dataset:
+        """
+        xarray.Dataset containing summary statistics for the input.
+        """
+        stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo_ir.nc"
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": 8}]
+        return stats
+
+    def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
+        """
+        Load GEO IR data from NetCDF file.
+
+        Args:
+            geo_data_file: A Path object pointing to the file from which to load the input data.
+            target_time: An xarray.DataArray containing the target times, which will be used to
+                to interpolate the input observations to the nearest time step if 'self.nearest'
+                is 'True'.
+
+        Return:
+            A dicitonary mapping the single key 'obs_geo' to an array containing the GEO IR
+            observation from the desired time steps.
+        """
+        with open_if_required(geo_data_file) as geo_data:
+            obs = geo_data.observations.data[None]
+
+        obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
+        return {"obs_geo_ir": obs}
+
+    @property
+    def features(self) -> Dict[str, int]:
+        """
+        Dictionary mapping names of the input data variables loaded by the
+        GeoIR input class to the corresponding number of features.
+        """
+        n_features = 1
+        return {"obs_geo_ir": n_features}
+
+@dataclass
+class GeoIRT(InputConfig):
+    """
     The GeoIR class represents IR-window channel observations from geostationary
     satellites in the retrieval input. The full IR input comprises 8
     half-hourly observations before the median overpass time and 8 after the
@@ -429,12 +555,10 @@ class GeoIR(InputConfig):
     data pixel.
     """
     time_steps: List[int]
-    nearest: bool = True
 
     def __init__(
             self,
             time_steps: Optional[List[int]] = None,
-            nearest: bool = False,
             normalize: Optional[str] = None,
             nan: Optional[float] = None
     ):
@@ -444,8 +568,6 @@ class GeoIR(InputConfig):
                 using zero-based indices with steps 0-7 to the eight time steps prior
                 to the median overpass time and steps 8-15 to the eight time steps after
                 the overpass time.
-            nearest: It 'True' only observations from the time nearest to the target
-                time will be loaded.
             normalize: An optional string specifying how to normalize the input data.
             nan: An optional float value that will be used to replace missing values
                 in the input data.
@@ -458,27 +580,21 @@ class GeoIR(InputConfig):
                     "Time steps for GeoIR input must be within [0, 15]."
                 )
         self.time_steps = time_steps
-        self.nearest = nearest
         self.normalize = normalize
         self.nan = nan
-        self._stats = None
 
     @property
     def name(self) -> str:
-        return "geo_ir"
+        return "geo_ir_t"
 
-    @property
+    @cached_property
     def stats(self) -> xr.Dataset:
         """
         xarray.Dataset containing summary statistics for the input.
         """
-        if self._stats is None:
-            stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo_ir.nc"
-            if self.nearest:
-                self._stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": 8}]
-            else:
-                self._stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": self.time_steps}]
-        return self._stats
+        stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo_ir.nc"
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": self.time_steps}]
+        return stats
 
     def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
         """
@@ -496,15 +612,7 @@ class GeoIR(InputConfig):
         """
         with open_if_required(geo_data_file) as geo_data:
             geo_data = geo_data.transpose("time", ...)
-            if self.nearest:
-                if "nearest_ind" in geo_data:
-                    obs = geo_data.observations[{"time": geo_data.nearest_ind}].data
-                else:
-                    delta_t = geo_data.time - target_time
-                    inds = np.abs(delta_t).argmin("time")
-                    obs = geo_data.observations[{"time": inds}].data[None]
-            else:
-                obs = geo_data.observations[{"time": self.time_steps}].data
+            obs = geo_data.observations[{"time": self.time_steps}].data
 
         obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
         return {"obs_geo_ir": obs}
@@ -515,30 +623,21 @@ class GeoIR(InputConfig):
         Dictionary mapping names of the input data variables loaded by the
         GeoIR input class to the corresponding number of features.
         """
-        if self.nearest:
-            n_features = 1
-        else:
-            n_features = len(self.time_steps)
+        n_features = len(self.time_steps)
         return {"obs_geo_ir": n_features}
 
 
 @dataclass
-class Geo(InputConfig):
+class GeoT(InputConfig):
     """
     The Geo class represents GOES-16 ABI  observations in the retrieval input.
     The full IR input comprises 2 15-minute observations before the median
     overpass time and 2 after the median overpass time.
-    The GeoIR class allows selecting subsets of these time steps as well as
-    only loading the nearest observations for every reference data pixel.
     """
-    time_steps: List[int]
-    nearest: bool = True
-
     def __init__(
             self,
             channels: Optional[List[int]] = None,
             time_steps: Optional[List[int]] = None,
-            nearest: bool = False,
             normalize: Optional[str] = None,
             nan: Optional[float] = None
     ):
@@ -549,8 +648,6 @@ class Geo(InputConfig):
             time_steps: Optional zero-based indices of the time steps to load. Indices
                 0 and 1 correspond to 30 and 15 minutes before the median overpass time
                 and indices 2 and 3 to 15 minutes after the median overpass time.
-            nearest: It 'True' only observations from the time nearest to the target
-                time will be loaded.
             normalize: An optional string specifying how to normalize the input data.
             nan: An optional float value that will be used to replace missing values
                 in the input data.
@@ -567,33 +664,26 @@ class Geo(InputConfig):
                     "Time steps for Geo input must be within [0, 6]."
                 )
         self.time_steps = time_steps
-        self.nearest = nearest
-        self._stats = None
         self.normalize = normalize
         self.nan = nan
 
     @property
     def name(self) -> str:
-        return "geo"
+        return "geo_t"
 
-    @property
+    @cached_property
     def stats(self) -> xr.Dataset:
         """
         xarray.Dataset containing summary statistics for the input.
         """
-        if self._stats is None:
-            stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo.nc"
-            stats = xr.load_dataset(stats_file, engine="h5netcdf")
-            mask = np.zeros((4, 16), dtype=bool)
-            if self.nearest:
-                mask[2, self.channels] = True
-            else:
-                for time_ind in self.time_steps:
-                    mask[time_ind, self.channels] = True
-            mask = mask.ravel()
-            self._stats = stats[{"features": mask}]
-
-        return self._stats
+        stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo.nc"
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")
+        mask = np.zeros((4, 16), dtype=bool)
+        for time_ind in self.time_steps:
+            mask[time_ind, self.channels] = True
+        mask = mask.ravel()
+        stats = stats[{"features": mask}]
+        return stats
 
     def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
         """
@@ -613,18 +703,8 @@ class Geo(InputConfig):
         with open_if_required(geo_data_file) as geo_data:
             geo_data = geo_data.compute()
             geo_data = geo_data.transpose("time", "channel", ...)[{"channel": self.channels}]
-            if self.nearest:
-                if "nearest_time_step" in geo_data:
-                    inds = geo_data.nearest_time_step
-                else:
-                    delta_t = geo_data.time - target_time
-                    inds = np.abs(delta_t).argmin("time")
-                    if "latitude" in inds.coords:
-                        inds = inds.drop_vars(["latitude", "longitude"])
-                obs = geo_data.observations[{"time": inds}].transpose("channel", ...).data
-            else:
-                obs = geo_data.observations[{"time": self.time_steps}].data
-                obs = np.reshape(obs, (-1,) + obs.shape[2:])
+            obs = geo_data.observations[{"time": self.time_steps}].data
+            obs = np.reshape(obs, (-1,) + obs.shape[2:])
 
             if self.normalize is not None:
                 obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
@@ -640,11 +720,89 @@ class Geo(InputConfig):
         Geo input class to the corresponding number of features.
         """
         n_chans = len(self.channels)
-        if self.nearest:
-            n_features = n_chans
-        else:
-            n_features = len(self.time_steps) * n_chans
+        n_features = len(self.time_steps) * n_chans
         return {"obs_geo": n_features}
+
+
+@dataclass
+class Geo(InputConfig):
+    """
+    The Geo class represents GOES-16 ABI  observations in the retrieval input.
+    The full IR input comprises 2 15-minute observations before the median
+    overpass time and 2 after the median overpass time.
+    """
+    def __init__(
+            self,
+            channels: Optional[List[int]] = None,
+            normalize: Optional[str] = None,
+            nan: Optional[float] = None
+    ):
+        """
+        Args:
+            channels: Optional list of zero-based indices identifying the GOES channels
+                to load.
+            normalize: An optional string specifying how to normalize the input data.
+            nan: An optional float value that will be used to replace missing values
+                in the input data.
+        """
+        if channels is None:
+            channels = range(16)
+        self.channels = channels
+        self.normalize = normalize
+        self.nan = nan
+
+    @property
+    def name(self) -> str:
+        return "geo"
+
+    @cached_property
+    def stats(self) -> xr.Dataset:
+        """
+        xarray.Dataset containing summary statistics for the input.
+        """
+        stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo.nc"
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")
+        mask = np.zeros((4, 16), dtype=bool)
+        mask[3, self.channels] = True
+        mask = mask.ravel()
+        stats = stats[{"features": mask}]
+        return stats
+
+    def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
+        """
+        Load GEO data from NetCDF file.
+
+        Args:
+            geo_data_file: A Path object pointing to the file from which to load the input data.
+            target_time: An xarray.DataArray containing the target times, which will be used to
+                to interpolate the input observations to the nearest time step if 'self.nearest'
+                is 'True'.
+
+        Return:
+            A dicitonary mapping the single key 'obs_geo' to an array containing the GEO
+            observation from the desired time steps. The returned array will have the
+            time and channel dimensions along the leading axes of the array.
+        """
+        with open_if_required(geo_data_file) as geo_data:
+            geo_data = geo_data.compute()
+            geo_data = geo_data.transpose("channel", ...)[{"channel": self.channels}]
+            obs = geo_data.observations.data
+
+            if self.normalize is not None:
+                obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
+
+        del geo_data
+
+        return {"obs_geo": obs}
+
+    @property
+    def features(self) -> Dict[str, int]:
+        """
+        Dictionary mapping names of the input data variables loaded by the
+        Geo input class to the corresponding number of features.
+        """
+        n_chans = len(self.channels)
+        return {"obs_geo": n_chans}
 
 
 def parse_retrieval_inputs(

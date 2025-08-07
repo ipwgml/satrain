@@ -279,6 +279,12 @@ def load_retrieval_input_data(
     with xr.open_dataset(target_file, engine="h5netcdf") as target_data:
         target_data = target_data.transpose(*spatial_dims, ...)
         input_data["time"] = (spatial_dims, target_data.time.data)
+        if "latitude" not in target_data.dims:
+            input_data["latitude"] = (spatial_dims, target_data.latitude.data)
+            input_data["longitude"] = (spatial_dims, target_data.longitude.data)
+        else:
+            input_data["latitude"] = target_data.latitude
+            input_data["longitude"] = target_data.longitude
 
     for inpt in retrieval_input:
         path = input_files.get_path(inpt.name, geometry)
@@ -290,16 +296,6 @@ def load_retrieval_input_data(
             if inpt.name in ["gmi", "atms"]:
                 with xr.open_dataset(path) as data:
                     input_data.attrs.update(data.attrs)
-
-    ancillary_file = input_files.get_path("ancillary", geometry)
-    ancillary_data = xr.load_dataset(ancillary_file, engine="h5netcdf")
-    if "latitude" not in ancillary_data.dims:
-        input_data["latitude"] = (spatial_dims, ancillary_data.latitude.data)
-        input_data["longitude"] = (spatial_dims, ancillary_data.longitude.data)
-    else:
-        input_data["latitude"] = ancillary_data.latitude
-        input_data["longitude"] = ancillary_data.longitude
-
     return input_data
 
 
@@ -493,8 +489,12 @@ class InputFiles:
     ancillary_file_on_swath: Path
     geo_file_gridded: Optional[Path]
     geo_file_on_swath: Optional[Path]
+    geo_t_file_gridded: Optional[Path]
+    geo_t_file_on_swath: Optional[Path]
     geo_ir_file_gridded: Optional[Path]
     geo_ir_file_on_swath: Optional[Path]
+    geo_ir_t_file_gridded: Optional[Path]
+    geo_ir_t_file_on_swath: Optional[Path]
 
     def get_path(self, name: str, geometry: str) -> Path | None:
         """
@@ -507,10 +507,10 @@ class InputFiles:
         Return:
             A Path object pointing to the input file to load or None.
         """
-        if name not in ["target", "gmi", "atms", "ancillary", "geo_ir", "geo"]:
+        if name not in ["target", "gmi", "atms", "ancillary", "geo", "geo_t", "geo_ir", "geo_ir_t"]:
             raise ValueError(
                 "'name' must be one of the supported input datasets ('target', "
-                "'gmi', 'atms', 'ancillary', 'geo_ir', 'geo')"
+                "'gmi', 'atms', 'ancillary', 'geo', 'geo_t', 'geo_ir', 'geo_ir_t')"
             )
         if geometry not in ["on_swath", "gridded"]:
             raise ValueError(
@@ -974,8 +974,12 @@ class Evaluator:
             ),
             self.geo_gridded[index] if hasattr(self, "geo_gridded") else None,
             self.geo_on_swath[index] if hasattr(self, "geo_on_swath") else None,
-            self.geo_ir_gridded[index] if hasattr(self, "geo_ir_gridded") else None,
-            self.geo_ir_on_swath[index] if hasattr(self, "geo_ir_on_swath") else None,
+            self.geo_t_gridded[index] if hasattr(self, "geo_t_gridded") else None,
+            self.geo_t_on_swath[index] if hasattr(self, "geo_t_on_swath") else None,
+            self.geo_ir_gridded[index] if hasattr(self, "geo_ir_t_gridded") else None,
+            self.geo_ir_on_swath[index] if hasattr(self, "geo_ir_t_on_swath") else None,
+            self.geo_ir_t_gridded[index] if hasattr(self, "geo_ir_t_gridded") else None,
+            self.geo_ir_t_on_swath[index] if hasattr(self, "geo_ir_t_on_swath") else None,
         )
 
     def get_input_data(self, scene_index: int) -> xr.Dataset:

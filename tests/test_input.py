@@ -72,46 +72,50 @@ def test_parsing():
     assert isinstance(cfg, Ancillary)
 
 
-def test_gmi_input(satrain_gmi_gridded_train):
+
+@pytest.mark.parametrize("sensor_and_fixture", [["gmi", "satrain_gmi_gridded_train"], ["atms", "satrain_atms_gridded_train"]])
+def test_pmw_input(request, sensor_and_fixture):
     """
-    Test loading of GMI input data.
+    Test loading of PMW input data.
     """
+    sensor, fixture = sensor_and_fixture
+    data_path = request.getfixturevalue(fixture)
+
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        reference_sensor=sensor,
         split="training",
         geometry="gridded",
         subset="xl",
-        data_path=satrain_gmi_gridded_train
+        data_path=data_path
     )
-    gmi_files = files["gmi"]
+    pmw_files = files[sensor]
     target_files = files["target"]
-    inpt = {"name": "gmi", "channels": [0, 1]}
+    inpt = {"name": sensor, "channels": [0, 1]}
     cfg = InputConfig.parse(inpt)
     target_data = xr.load_dataset(target_files[0])
-    inpt_data = cfg.load_data(gmi_files[0], target_time=target_data.time)
+    inpt_data = cfg.load_data(pmw_files[0], target_time=target_data.time)
 
-    assert inpt_data["obs_gmi"].shape[0] == cfg.features["obs_gmi"]
-    assert inpt_data["eia_gmi"].shape[0] == cfg.features["obs_gmi"]
+    assert inpt_data[f"obs_{sensor}"].shape[0] == cfg.features[f"obs_{sensor}"]
+    assert inpt_data[f"eia_{sensor}"].shape[0] == cfg.features[f"obs_{sensor}"]
 
-    assert "obs_gmi" in inpt_data
-    assert inpt_data["obs_gmi"].shape[0] == 2
-    assert "eia_gmi" in inpt_data
+    assert f"obs_{sensor}" in inpt_data
+    assert inpt_data[f"obs_{sensor}"].shape[0] == 2
+    assert f"eia_{sensor}" in inpt_data
 
     assert cfg.stats is not None
 
-    obs = inpt_data["obs_gmi"]
-    assert np.isnan(obs).any()
+    obs = inpt_data[f"obs_{sensor}"]
     valid = np.isfinite(obs)
     assert np.all(obs[valid] > 0.0)
 
     # Test replacement of NAN value
-    inpt = {"name": "gmi", "channels": [0, 1], "normalize": "minmax", "nan": -1.5}
+    inpt = {"name": f"{sensor}", "channels": [0, 1], "normalize": "minmax", "nan": -1.5}
     cfg = InputConfig.parse(inpt)
     target_data = xr.load_dataset(target_files[0])
-    inpt_data = cfg.load_data(gmi_files[0], target_time=target_data.time)
+    inpt_data = cfg.load_data(pmw_files[0], target_time=target_data.time)
 
-    obs = inpt_data["obs_gmi"]
+    obs = inpt_data[f"obs_{sensor}"]
     assert np.isfinite(obs).all()
     valid = np.isfinite(obs)
     assert not np.all(obs[valid] > 0.0)
@@ -157,15 +161,7 @@ def test_geo_ir_input(satrain_gmi_gridded_train):
     geo_ir_files = files["geo_ir"]
     target_files = files["target"]
 
-    inpt = {"name": "geo_ir", "time_steps": [0, 1, 2, 3]}
-    cfg = InputConfig.parse(inpt)
-    target_data = xr.load_dataset(target_files[0])
-    inpt_data = cfg.load_data(geo_ir_files[0], target_time=target_data.time)
-    assert "obs_geo_ir" in inpt_data
-    assert inpt_data["obs_geo_ir"].shape[0] == len(cfg.time_steps)
-    assert inpt_data["obs_geo_ir"].shape[0] == cfg.features["obs_geo_ir"]
-
-    inpt = {"name": "geo_ir", "nearest": True, "normalize": "minmax", "nan": -1.5}
+    inpt = {"name": "geo_ir"}
     cfg = InputConfig.parse(inpt)
     target_data = xr.load_dataset(target_files[0])
     inpt_data = cfg.load_data(geo_ir_files[0], target_time=target_data.time)
@@ -191,15 +187,7 @@ def test_geo_input_gridded(satrain_gmi_gridded_train):
     geo_files = files["geo"]
     target_files = files["target"]
 
-    inpt = {"name": "geo", "time_steps": [1, 2], "channels": [0, 3, 9]}
-    cfg = InputConfig.parse(inpt)
-    target_data = xr.load_dataset(target_files[0])
-    inpt_data = cfg.load_data(geo_files[0], target_time=target_data.time)
-    assert "obs_geo" in inpt_data
-    assert inpt_data["obs_geo"].shape[0] == len(cfg.time_steps) * len(cfg.channels)
-    assert inpt_data["obs_geo"].shape[0] == cfg.features["obs_geo"]
-
-    inpt = {"name": "geo", "nearest": True}
+    inpt = {"name": "geo", "channels": [0, 3, 9]}
     cfg = InputConfig.parse(inpt)
     target_data = xr.load_dataset(target_files[0])
     inpt_data = cfg.load_data(geo_files[0], target_time=target_data.time)
@@ -224,15 +212,15 @@ def test_geo_input_on_swath(satrain_gmi_on_swath_train):
     geo_files = files["geo"]
     target_files = files["target"]
 
-    inpt = {"name": "geo", "time_steps": [1, 2], "channels": [0, 3, 9]}
+    inpt = {"name": "geo", "channels": [0, 3, 9]}
     cfg = InputConfig.parse(inpt)
     target_data = xr.load_dataset(target_files[0])
     inpt_data = cfg.load_data(geo_files[0], target_time=target_data.time)
     assert "obs_geo" in inpt_data
-    assert inpt_data["obs_geo"].shape[0] == len(cfg.time_steps) * len(cfg.channels)
+    assert inpt_data["obs_geo"].shape[0] == len(cfg.channels)
     assert inpt_data["obs_geo"].shape[0] == cfg.features["obs_geo"]
 
-    inpt = {"name": "geo", "nearest": True}
+    inpt = {"name": "geo"}
     cfg = InputConfig.parse(inpt)
     target_data = xr.load_dataset(target_files[0])
     inpt_data = cfg.load_data(geo_files[0], target_time=target_data.time)
@@ -242,7 +230,7 @@ def test_geo_input_on_swath(satrain_gmi_on_swath_train):
     assert (inpt_data["obs_geo"] > 100).any()
 
     # Ensure that input is normalized.
-    inpt = {"name": "geo", "nearest": True, "normalize": "minmax", "nan": -1.5}
+    inpt = {"name": "geo", "normalize": "minmax", "nan": -1.5}
     cfg = InputConfig.parse(inpt)
     target_data = xr.load_dataset(target_files[0])
     inpt_data = cfg.load_data(geo_files[0], target_time=target_data.time)
@@ -252,23 +240,24 @@ def test_geo_input_on_swath(satrain_gmi_on_swath_train):
     assert (inpt_data["obs_geo"] <= 1.1).all()
 
 
-def test_calculate_input_features():
+@pytest.mark.parametrize("sensor", ["gmi", "atms"])
+def test_calculate_input_features(sensor):
     """
     Test calculation of input features.
     """
     inputs = [
-        {"name": "gmi", "include_angles": True, "channels": [0, 3, 5]},
+        {"name": "gmi", "include_angles": True, "channels": [0, 3, 4]},
         {"name": "ancillary", "variables": ["two_meter_temperature", "surface_type"]},
-        {"name": "geo_ir", "time_steps": [8, 9, 10, 11]},
-        {"name": "geo", "time_steps": [1, 2], "channels": [0, 1, 2]},
+        {"name": "geo_ir"},
+        {"name": "geo", "channels": [0, 1, 2]},
     ]
 
     features = calculate_input_features(inputs, stack=False)
     assert features["obs_gmi"] == 3
     assert features["eia_gmi"] == 3
     assert features["ancillary"] == 2
-    assert features["obs_geo_ir"] == 4
-    assert features["obs_geo"] == 6
+    assert features["obs_geo_ir"] == 1
+    assert features["obs_geo"] == 3
 
     features = calculate_input_features(inputs, stack=True)
-    assert features == 18
+    assert features == 12

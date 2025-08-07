@@ -382,7 +382,7 @@ def get_local_files(
         data_path = Path(data_path)
 
     files = {}
-    sources = ["ancillary", "geo", "geo_ir", "target"]
+    sources = ["ancillary", "geo", "geo_t", "geo_ir", "geo_ir_t", "target"]
     for source in [reference_sensor,] + sources:
         files[source] = []
         if split != "testing":
@@ -410,6 +410,39 @@ def get_local_files(
             source_times = set([get_median_time(path) for path in files[source]])
             assert set(ref_times) == set([get_median_time(path) for path in files[source]])
 
+    return files
+
+
+
+
+def list_local_files_rec(path: Path) -> Dict[str, Any]:
+    """
+    Recursive listing of ipwgml data files.
+
+    Args:
+        path: A path pointing to a directory containing ipwgml files.
+
+    Return:
+        A dictionary containing all sub-directories
+
+    """
+    netcdf_files = sorted(list(path.glob("*.nc")))
+    if len(netcdf_files) > 0:
+        return netcdf_files
+
+    files = {}
+    for child in path.iterdir():
+        if child.is_dir():
+            files[child.name] = list_local_files_rec(child)
+    return files
+
+
+def list_local_files() -> Dict[str, Any]:
+    """
+    List available ipwgml files.
+    """
+    data_path = config.get_data_path()
+    files = list_local_files_rec(data_path)
     return files
 
 
@@ -508,7 +541,7 @@ def cli(
                 for split in splits:
 
                     if split == "testing":
-                        domains = ["conus"]
+                        domains = ["conus", "korea", "austria"]
                     else:
                         domains = [None]
 
@@ -531,34 +564,3 @@ def cli(
                             )
 
     config.set_data_path(data_path)
-
-
-def list_local_files_rec(path: Path) -> Dict[str, Any]:
-    """
-    Recursive listing of ipwgml data files.
-
-    Args:
-        path: A path pointing to a directory containing ipwgml files.
-
-    Return:
-        A dictionary containing all sub-directories
-
-    """
-    netcdf_files = sorted(list(path.glob("*.nc")))
-    if len(netcdf_files) > 0:
-        return netcdf_files
-
-    files = {}
-    for child in path.iterdir():
-        if child.is_dir():
-            files[child.name] = list_local_files_rec(child)
-    return files
-
-
-def list_local_files() -> Dict[str, Any]:
-    """
-    List available ipwgml files.
-    """
-    data_path = config.get_data_path()
-    files = list_local_files_rec(data_path)
-    return files

@@ -26,9 +26,9 @@ def test_dataset_satrain_tabular(satrain_gmi_on_swath_train):
     assert "obs_gmi" in x
     assert x["obs_gmi"].shape == (13,)
     assert "obs_geo_ir" in x
-    assert x["obs_geo_ir"].shape == (16,)
+    assert x["obs_geo_ir"].shape == (1,)
     assert "obs_geo" in x
-    assert x["obs_geo"].shape == (112,)
+    assert x["obs_geo"].shape == (16,)
     assert "ancillary" in x
     assert y.numel() == 1
 
@@ -75,8 +75,8 @@ def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
         if ind < len(dataset) - 1:
             assert "obs_gmi" in x
             assert x["obs_gmi"].shape == (batch_size, 13)
-            assert x["obs_geo_ir"].shape == (batch_size, 16)
-            assert x["obs_geo"].shape == (batch_size, 112)
+            assert x["obs_geo_ir"].shape == (batch_size, 1)
+            assert x["obs_geo"].shape == (batch_size, 16)
             assert "ancillary" in x
             assert y.numel() == batch_size
 
@@ -86,8 +86,8 @@ def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
         split="training",
         retrieval_input=[
             {"name": "gmi", "channels": [0, -2, -1]},
-            {"name": "geo", "nearest": True},
-            {"name": "geo_ir", "nearest": True},
+            {"name": "geo"},
+            {"name": "geo_ir"},
             {"name": "ancillary", "variables": ["two_meter_temperature"]},
         ],
         ipwgml_path=data_path,
