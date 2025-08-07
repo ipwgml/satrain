@@ -12,7 +12,7 @@ batch_size = 16
 metrics = ["Bias", "MSE", "CorrelationCoef", "PlotSamples"]
 scheduler = "CosineAnnealingLR"
 scheduler_args = {T_max=20}
-n_data_loader_workers = 4
+n_data_loader_workers = 8
 persistent_workers = false
 
 [stage_1.training_dataset_args]
@@ -40,8 +40,8 @@ reference_datasets = ["gpm"]
 batch_size = 16
 metrics = ["Bias", "MSE", "CorrelationCoef", "PlotSamples"]
 scheduler = "CosineAnnealingLR"
-scheduler_args = {T_max=20}
-n_data_loader_workers = 4
+scheduler_args = {T_max=40}
+n_data_loader_workers = 8
 persistent_workers = false
 
 [stage_2.training_dataset_args]
