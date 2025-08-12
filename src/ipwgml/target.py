@@ -158,10 +158,10 @@ class TargetConfig:
         """
         with open_if_required(target_data) as data:
             target = data[self.target].data.copy()
-            invalid = self.get_mask(target_data)
+            invalid = self.get_mask(data)
             target[invalid] = np.nan
         del data
-        return target
+        return target.copy()
 
     def load_precip_mask(self, target_data: Path | str | xr.Dataset) -> np.ndarray:
         """
@@ -176,8 +176,11 @@ class TargetConfig:
             A boolean numpy.ndarray containing the heavy precipitation mask.
         """
         with open_if_required(target_data) as data:
-            target = data[self.target].data.copy()
-        return target >= self.precip_threshold
+            target = data[self.target].data
+            mask = (self.precip_threshold <= target).astype(np.float32)
+            invalid = self.get_mask(data)
+            mask[invalid] = np.nan
+        return mask.copy()
 
     def load_heavy_precip_mask(self, target_data: Path | str | xr.Dataset) -> np.ndarray:
         """
@@ -193,5 +196,8 @@ class TargetConfig:
 
         """
         with open_if_required(target_data) as data:
-            target = data[self.target].data.copy()
-        return target >= self.heavy_precip_threshold
+            target = data[self.target].data
+            mask = (self.heavy_precip_threshold <= target).astype(np.float32)
+            invalid = self.get_mask(data)
+            mask[invalid] = np.nan
+        return mask.copy()

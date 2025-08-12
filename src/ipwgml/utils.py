@@ -7,6 +7,7 @@ Defines helper functions used throught the ipwgml package.
 
 from contextlib import contextmanager
 from datetime import datetime
+import gc
 from pathlib import Path
 from typing import Union
 
@@ -26,14 +27,13 @@ def open_if_required(path_or_dataset: str | Path | xr.Dataset) -> xr.Dataset:
     Return:
          An xarray.Dataset providing access to the loaded data.
     """
-    if isinstance(path_or_dataset, (str, Path)):
-        handle = xr.load_dataset(path_or_dataset)
-        path_or_dataset = handle
-    else:
-        handle = None
-
     try:
-        yield path_or_dataset
+        if isinstance(path_or_dataset, (str, Path)):
+            handle = xr.load_dataset(path_or_dataset)
+            yield handle
+        else:
+            handle = None
+            yield path_or_dataset
     finally:
         if handle is not None:
             handle.close()

@@ -50,6 +50,7 @@ Members
 from abc import ABC, abstractproperty
 from copy import copy
 from functools import cached_property
+import gc
 from pathlib import Path
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Union
@@ -746,14 +747,18 @@ class Geo(InputConfig):
                 in the input data.
         """
         if channels is None:
-            channels = range(16)
-        self.channels = channels
+            channels = list(range(16))
+        self._channels = np.array(channels)
         self.normalize = normalize
         self.nan = nan
 
     @property
     def name(self) -> str:
         return "geo"
+
+    @cached_property
+    def channels(self):
+        return self._channels
 
     @cached_property
     def stats(self) -> xr.Dataset:
@@ -784,16 +789,11 @@ class Geo(InputConfig):
             time and channel dimensions along the leading axes of the array.
         """
         with open_if_required(geo_data_file) as geo_data:
-            geo_data = geo_data.compute()
-            geo_data = geo_data.transpose("channel", ...)[{"channel": self.channels}]
-            obs = geo_data.observations.data
-
-            if self.normalize is not None:
-                obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
-
+            obs = geo_data.observations[{"channels": self.channels}].load()
+            obs = obs.transpose("channels", ...).data.copy()
         del geo_data
-
-        return {"obs_geo": obs}
+        obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
+        return {"obs_geo": obs.copy()}
 
     @property
     def features(self) -> Dict[str, int]:

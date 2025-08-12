@@ -191,7 +191,6 @@ class SatRainTabular(Dataset):
 
         self.target_data = xr.concat(self.target_data, dim="samples")
         for inpt in self.retrieval_input:
-            print(getattr(self, inpt.name + "_data")[0])
             input_data = xr.concat(getattr(self, inpt.name + "_data"), dim="samples")
             setattr(self, inpt.name + "_data", input_data)
 
@@ -245,7 +244,15 @@ class SatRainTabular(Dataset):
         surface_precip = self.target_config.load_reference_precip(target_data).astype(
             np.float32
         )
-        surface_precip = torch.tensor(surface_precip)
+        precip_mask = self.target_config.load_precip_mask(target_data).astype(np.float32)
+        heavy_precip_mask = self.target_config.load_heavy_precip_mask(target_data).astype(np.float32)
+        target = {
+            "surface_precip": torch.tensor(surface_precip),
+            "precip_mask": torch.tensor(surface_precip),
+            "heavy_precip_mask": torch.tensor(surface_precip),
+
+        }
+
         target_time = target_data.time
 
         input_data = {}
@@ -265,7 +272,7 @@ class SatRainTabular(Dataset):
         if self.stack:
             input_data = torch.cat(list(input_data.values()), -1)
 
-        return input_data, surface_precip
+        return input_data, target
 
 
 def apply(tensors: Any, transform: torch.Tensor) -> torch.Tensor:
@@ -481,9 +488,15 @@ class SatRainSpatial:
         Load sample from dataset.
         """
         with xr.open_dataset(self.get_target_files()[ind], chunks=None, cache=False) as data:
-            target_time = data.time.data
-            target = self.target_config.load_reference_precip(data)
-            target = torch.tensor(target.astype(np.float32))
+            target_time = data.time.data.copy()
+            surface_precip = self.target_config.load_reference_precip(data)
+            precip_mask = self.target_config.load_precip_mask(data)
+            heavy_precip_mask = self.target_config.load_heavy_precip_mask(data)
+            target = {
+                "surface_precip": torch.tensor(surface_precip),
+                "precip_mask": torch.tensor(precip_mask.astype(np.float32)),
+                "heavy_precip_mask": torch.tensor(heavy_precip_mask.astype(np.float32)),
+            }
         data.close()
         del data
 
@@ -520,4 +533,5 @@ class SatRainSpatial:
             input_data = torch.cat(list(input_data.values()), axis=0)
 
         del target_time
+
         return input_data, target
