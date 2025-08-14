@@ -30,7 +30,7 @@ def test_dataset_satrain_tabular(satrain_gmi_on_swath_train):
     assert "obs_geo" in x
     assert x["obs_geo"].shape == (16,)
     assert "ancillary" in x
-    assert y.numel() == 1
+    assert y["surface_precip"].numel() == 1
 
 
 def test_dataset_satrain_tabular_stacked(satrain_gmi_on_swath_train):
@@ -51,7 +51,7 @@ def test_dataset_satrain_tabular_stacked(satrain_gmi_on_swath_train):
     assert len(dataset) > 0
     x, y = next(iter(dataset))
     assert isinstance(x, torch.Tensor)
-    assert y.numel() == 1
+    assert y["surface_precip"].numel() == 1
 
 
 def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
@@ -78,7 +78,7 @@ def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
             assert x["obs_geo_ir"].shape == (batch_size, 1)
             assert x["obs_geo"].shape == (batch_size, 16)
             assert "ancillary" in x
-            assert y.numel() == batch_size
+            assert y["surface_precip"].numel() == batch_size
 
     dataset = SatRainTabular(
         reference_sensor="gmi",
@@ -104,7 +104,7 @@ def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
             assert x["obs_geo"].shape == (batch_size, 16)
             assert "ancillary" in x
             assert x["ancillary"].shape == (batch_size, 1)
-            assert y.numel() == batch_size
+            assert y["surface_precip"].numel() == batch_size
 
 
 def test_dataset_satrain_spatial(satrain_gmi_gridded_train):
@@ -126,7 +126,7 @@ def test_dataset_satrain_spatial(satrain_gmi_gridded_train):
     assert "obs_gmi" in x
     assert x["obs_gmi"].shape == (13, 256, 256)
     assert "ancillary" in x
-    assert y.shape == (256, 256)
+    assert y["surface_precip"].shape == (256, 256)
 
 
 def test_dataset_satrain_spatial_stacked(satrain_gmi_gridded_train):

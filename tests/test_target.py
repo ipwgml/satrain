@@ -148,11 +148,12 @@ def test_load_precip_mask_spatial(satrain_gmi_gridded_train):
 
     target_data = xr.load_dataset(target_files[0])
 
-    target_config = TargetConfig(precip_threshold=1.0)
+    thresh = np.random.uniform(0.5, 2.0)
+    target_config = TargetConfig(precip_threshold=thresh)
     precip_data = target_config.load_reference_precip(target_data)
-    precip_mask = target_config.load_precip_mask(target_data)
+    precip_mask = 0 < target_config.load_precip_mask(target_data)
     mask = target_config.get_mask(target_data)
-    assert (precip_data[~mask][precip_mask[~mask]] >= 1.0).all()
+    assert (precip_data[~mask][precip_mask[~mask]] >= thresh).all()
 
 
 def test_load_precip_mask_tabular(satrain_gmi_gridded_train):
@@ -173,11 +174,12 @@ def test_load_precip_mask_tabular(satrain_gmi_gridded_train):
     valid = np.isfinite(target_data.surface_precip)
     target_data = extract_samples(target_data, xr.DataArray(valid, dims=target_data.surface_precip.dims))
 
-    target_config = TargetConfig(precip_threshold=1.0)
+    thresh = np.random.uniform(0.5, 2.0)
+    target_config = TargetConfig(precip_threshold=thresh)
     precip_data = target_config.load_reference_precip(target_data)
-    precip_mask = target_config.load_precip_mask(target_data)
+    precip_mask = 0 < target_config.load_precip_mask(target_data)
     mask = target_config.get_mask(target_data)
-    assert (precip_data[~mask][precip_mask[~mask]] >= 1.0).all()
+    assert (precip_data[~mask][precip_mask[~mask]] >= thresh).all()
 
 
 def test_load_load_heavy_precip_mask_spatial(satrain_gmi_gridded_train):
@@ -196,11 +198,12 @@ def test_load_load_heavy_precip_mask_spatial(satrain_gmi_gridded_train):
 
     target_data = xr.load_dataset(target_files[0])
 
-    target_config = TargetConfig(heavy_precip_threshold=11.0)
+    thresh = np.random.uniform(10.0, 20.0)
+    target_config = TargetConfig(heavy_precip_threshold=thresh)
     precip_data = target_config.load_reference_precip(target_data)
-    precip_mask = target_config.load_heavy_precip_mask(target_data)
+    precip_mask = 0 < target_config.load_heavy_precip_mask(target_data)
     mask = target_config.get_mask(target_data)
-    assert (precip_data[~mask][precip_mask[~mask]] >= 11.0).all()
+    assert (precip_data[~mask][precip_mask[~mask]] >= thresh).all()
 
 
 def test_load_load_heavy_precip_mask_tabular(satrain_gmi_gridded_train):
@@ -221,8 +224,9 @@ def test_load_load_heavy_precip_mask_tabular(satrain_gmi_gridded_train):
     valid = np.isfinite(target_data.surface_precip)
     target_data = extract_samples(target_data, xr.DataArray(valid, dims=target_data.surface_precip.dims))
 
-    target_config = TargetConfig(heavy_precip_threshold=11.0)
+    thresh = np.random.uniform(10.0, 20.0)
+    target_config = TargetConfig(heavy_precip_threshold=thresh)
     precip_data = target_config.load_reference_precip(target_data)
-    precip_mask = target_config.load_heavy_precip_mask(target_data)
+    precip_mask = 0 < target_config.load_heavy_precip_mask(target_data)
     mask = target_config.get_mask(target_data)
-    assert (precip_data[~mask][precip_mask[~mask]] >= 11.0).all()
+    assert (precip_data[~mask][precip_mask[~mask]] >= thresh).all()

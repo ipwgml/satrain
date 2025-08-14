@@ -179,7 +179,8 @@ class TargetConfig:
             target = data[self.target].data
             mask = (self.precip_threshold <= target).astype(np.float32)
             invalid = self.get_mask(data)
-            mask[invalid] = np.nan
+            if isinstance(mask, np.ndarray):
+                mask[invalid] = np.nan
         return mask.copy()
 
     def load_heavy_precip_mask(self, target_data: Path | str | xr.Dataset) -> np.ndarray:
@@ -199,5 +200,6 @@ class TargetConfig:
             target = data[self.target].data
             mask = (self.heavy_precip_threshold <= target).astype(np.float32)
             invalid = self.get_mask(data)
-            mask[invalid] = np.nan
+            if isinstance(mask, np.ndarray):
+                mask[invalid] = np.nan
         return mask.copy()

@@ -788,8 +788,12 @@ class FAR(DetectionMetric):
             pred: A np.ndarray containing the predictions.
             target: A np.ndarray containing the reference data.
         """
+        if target.dtype != bool:
+            target = 0 < target
+
         true = target
         positive = pred
+
         with self.lock:
             self.n_false_positive += (positive * ~true).astype(np.int64).sum()
             self.n_positive += positive.astype(np.int64).sum()
@@ -837,6 +841,9 @@ class POD(DetectionMetric):
             pred: A np.ndarray containing the predictions.
             target: A np.ndarray containing the reference data.
         """
+        if target.dtype != bool:
+            target = 0 < target
+
         true = target
         positive = pred
         with self.lock:
@@ -883,6 +890,9 @@ class HSS(DetectionMetric):
             pred: A np.ndarray containing the predictions.
             target: A np.ndarray containing the reference data.
         """
+        if target.dtype != bool:
+            target = 0 < target
+
         true = target
         positive = pred
         with self.lock:
@@ -964,6 +974,9 @@ class PRCurve(ProbabilisticDetectionMetric):
             pred: A np.ndarray containing the predicted probabilities.
             target: A np.ndarray containing the true labels.
         """
+        if target.dtype != bool:
+            target = 0 < target
+
         pred = pred.reshape(-1, 1)
         target = target.reshape(-1, 1)
         pred = pred >= self.thresholds[None]
