@@ -6,13 +6,16 @@ Provides plotting-related functionality.
 """
 from pathlib import Path
 from typing import List
+import urllib
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator
 from matplotlib.patches import Rectangle
+import numpy as np
 import pandas as pd
 from PIL import Image
 import seaborn as sns
+import xarray as xr
 
 
 def set_style():
@@ -160,7 +163,7 @@ def download_blue_marble(texture_file: Path) -> Path:
         url: String specifying the URL of the texture file.
         texture_file: Path object pointing to the file to which to download the texture image.
     """
-    url = "https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73751/world.topo.bathy.200407.3x21600x10800.jpg"
+    url = "https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73751/world.topo.bathy.200407.3x21600x21600.D1.png"
     if not texture_file.exists():
         urllib.request.urlretrieve(url, texture_file)
     return texture_file
@@ -172,7 +175,7 @@ def get_blue_marble(area: "pyresample.AreaDefinition") -> Image:
     """
     from pansat.utils import resample_data
     Image.MAX_IMAGE_PIXELS = None   # disables the warning
-    texture_file = pathlib.Path(".") / "blue_marble_hires.jpg"
+    texture_file = Path(".") / "blue_marble_hires.png"
     img = np.array(Image.open(download_blue_marble(texture_file)))
     lats = np.linspace(90, -90, img.shape[0])
     lons = np.linspace(-180, 180, img.shape[1])
