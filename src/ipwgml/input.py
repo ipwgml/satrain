@@ -789,8 +789,8 @@ class Geo(InputConfig):
             time and channel dimensions along the leading axes of the array.
         """
         with open_if_required(geo_data_file) as geo_data:
-            obs = geo_data.observations[{"channels": self.channels}].load()
-            obs = obs.transpose("channels", ...).data.copy()
+            obs = geo_data.observations[{"channel": self.channels}].load()
+            obs = obs.transpose("channel", ...).data.copy()
         del geo_data
         obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
         return {"obs_geo": obs.copy()}
