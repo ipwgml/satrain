@@ -1243,6 +1243,7 @@ class Evaluator:
                 rqi = target_data.radar_quality_index
             else:
                 rqi = np.ones_like(res_1.surface_precip.data)
+            pixel_inds = target_data.pixel_index.load().data
 
         sp_ret = res_1.surface_precip.data
         sp_ref = res_1.surface_precip_ref.data
@@ -1291,7 +1292,6 @@ class Evaluator:
         add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
         ax.coastlines()
         if swath_boundaries:
-            pixel_inds = target_data.pixel_index
             ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
         ax.set_xlim(lon_min, lon_max)
         ax.set_ylim(lat_min, lat_max)
@@ -1328,12 +1328,10 @@ class Evaluator:
             ax.coastlines()
 
             if swath_boundaries:
-                pixel_inds = target_data.pixel_index
                 ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
 
             if include_metrics:
                 valid = np.isfinite(sp_ret) * np.isfinite(sp_ref) * (0 <= pixel_inds)
-                print(valid.sum())
                 corr = np.corrcoef(sp_ret[valid], sp_ref[valid])[0, 1]
                 mse = ((sp_ret[valid] - sp_ref[valid]) ** 2).mean()
                 mae = np.abs(sp_ret[valid] - sp_ref[valid]).mean()
