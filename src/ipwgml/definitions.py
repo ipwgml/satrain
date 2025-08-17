@@ -34,7 +34,7 @@ N_CLASSES = {
 
 ALL_INPUTS = ["gmi", "geo", "geo_ir", "ancillary"]
 
-BASE_SENSORS = ["gmi"]
+BASE_SENSORS = ["gmi", "atms"]
 GEOMETRIES = ["gridded", "on_swath"]
 SPLITS = ["training", "validation", "testing"]
 SIZES = ["xs", "s", "m", "l", "xl"]
