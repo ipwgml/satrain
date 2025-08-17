@@ -248,8 +248,8 @@ class SatRainTabular(Dataset):
         heavy_precip_mask = self.target_config.load_heavy_precip_mask(target_data).astype(np.float32)
         target = {
             "surface_precip": torch.tensor(surface_precip),
-            "precip_mask": torch.tensor(surface_precip),
-            "heavy_precip_mask": torch.tensor(surface_precip),
+            "precip_mask": torch.tensor(precip_mask),
+            "heavy_precip_mask": torch.tensor(heavy_precip_mask),
 
         }
 
