@@ -13,7 +13,7 @@ def test_dataset_satrain_tabular(satrain_gmi_on_swath_train):
     """
     data_path = satrain_gmi_on_swath_train
     dataset = SatRainTabular(
-        reference_sensor="gmi",
+        base_sensor="gmi",
         geometry="on_swath",
         split="training",
         retrieval_input=["gmi", "geo", "geo_ir", "ancillary"],
@@ -39,7 +39,7 @@ def test_dataset_satrain_tabular_stacked(satrain_gmi_on_swath_train):
     """
     data_path = satrain_gmi_on_swath_train
     dataset = SatRainTabular(
-        reference_sensor="gmi",
+        base_sensor="gmi",
         geometry="on_swath",
         split="training",
         retrieval_input=["gmi", "geo_ir", "ancillary"],
@@ -61,7 +61,7 @@ def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
     batch_size = 1024
     data_path = satrain_gmi_on_swath_train
     dataset = SatRainTabular(
-        reference_sensor="gmi",
+        base_sensor="gmi",
         geometry="on_swath",
         split="training",
         retrieval_input=["gmi", "geo", "geo_ir", "ancillary"],
@@ -81,7 +81,7 @@ def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
             assert y["surface_precip"].numel() == batch_size
 
     dataset = SatRainTabular(
-        reference_sensor="gmi",
+        base_sensor="gmi",
         geometry="on_swath",
         split="training",
         retrieval_input=[
@@ -113,7 +113,7 @@ def test_dataset_satrain_spatial(satrain_gmi_gridded_train):
     """
     data_path = satrain_gmi_gridded_train
     dataset = SatRainSpatial(
-        reference_sensor="gmi",
+        base_sensor="gmi",
         geometry="gridded",
         split="training",
         retrieval_input=["gmi", "ancillary", "geo_ir"],
@@ -135,7 +135,7 @@ def test_dataset_satrain_spatial_stacked(satrain_gmi_gridded_train):
     """
     data_path = satrain_gmi_gridded_train
     dataset = SatRainSpatial(
-        reference_sensor="gmi",
+        base_sensor="gmi",
         geometry="gridded",
         split="training",
         retrieval_input=["gmi", "ancillary", "geo_ir"],

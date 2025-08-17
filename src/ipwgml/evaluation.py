@@ -686,7 +686,7 @@ class Evaluator:
 
     def __init__(
         self,
-        reference_sensor: str,
+        base_sensor: str,
         geometry: str,
         retrieval_input: Optional[List[str | Dict[str, Any | InputConfig]]] = None,
         domain: str = "conus",
@@ -696,7 +696,7 @@ class Evaluator:
     ):
         """
         Args:
-            reference_sensor: The name of SatRain reference sensor
+            base_sensor: The name of SatRain reference sensor
             geometry: The geometry of  the retrieval. 'gridded' for retrievals operating on
                 the regridded input observations; 'on_swath' for retrievals operating on the
                 nativ swath-based observations.
@@ -718,7 +718,7 @@ class Evaluator:
             )
 
         self.domain = domain
-        self.reference_sensor = reference_sensor
+        self.base_sensor = base_sensor
         self.geometry = geometry
 
         if retrieval_input is None:
@@ -757,7 +757,7 @@ class Evaluator:
             if download:
                 download_missing(
                     dataset_name="satrain",
-                    reference_sensor=self.reference_sensor,
+                    base_sensor=self.base_sensor,
                     geometry=self.geometry,
                     split="testing",
                     source=source,
@@ -767,7 +767,7 @@ class Evaluator:
                 )
         files = get_local_files(
             dataset_name="satrain",
-            reference_sensor=self.reference_sensor,
+            base_sensor=self.base_sensor,
             geometry=self.geometry,
             split="testing",
             domain=self.domain,
@@ -781,7 +781,7 @@ class Evaluator:
             if download:
                 download_missing(
                     dataset_name="satrain",
-                    reference_sensor=self.reference_sensor,
+                    base_sensor=self.base_sensor,
                     geometry=geometry,
                     split="testing",
                     source="target",
@@ -791,7 +791,7 @@ class Evaluator:
                 )
             files = get_local_files(
                 dataset_name="satrain",
-                reference_sensor=self.reference_sensor,
+                base_sensor=self.base_sensor,
                 geometry=geometry,
                 split="testing",
                 domain=self.domain,
@@ -932,7 +932,7 @@ class Evaluator:
 
     def __repr__(self):
         return (
-            f"Evaluator(reference_sensor='{self.reference_sensor}', geometry='{self.geometry}', "
+            f"Evaluator(base_sensor='{self.base_sensor}', geometry='{self.geometry}', "
             f"ipwgml_path='{self.ipwgml_path}')"
         )
 
@@ -1196,7 +1196,7 @@ class Evaluator:
             overlap: The overlap to apply for the tiling.
             batch_size: Maximum batch size for tiled spatial and tabular retrievals.
             swath_boundaries: If 'True' will plot swath boundaries of the GPM
-                reference_sensor.
+                base_sensor.
             ax_width: The width of each axes objects in inches.
             contour_legend: Whether or not to draw a legend for the radar boundary contours.
             include_metrics: Whether or not to print metrics onto retrieval results.
@@ -1332,7 +1332,8 @@ class Evaluator:
                 ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
 
             if include_metrics:
-                valid = np.isfinite(sp_ret) * np.isfinite(sp_ref)
+                valid = np.isfinite(sp_ret) * np.isfinite(sp_ref) * (0 <= pixel_inds)
+                print(valid.sum())
                 corr = np.corrcoef(sp_ret[valid], sp_ref[valid])[0, 1]
                 mse = ((sp_ret[valid] - sp_ref[valid]) ** 2).mean()
                 mae = np.abs(sp_ret[valid] - sp_ref[valid]).mean()
@@ -1381,7 +1382,7 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor, domain=self.domain)
+            results_b = baselines.load_baseline_results(self.base_sensor, domain=self.domain)
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1447,7 +1448,7 @@ class Evaluator:
             units.append(results[var].attrs["unit"])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor, domain=self.domain)
+            results_b = baselines.load_baseline_results(self.base_sensor, domain=self.domain)
             vars = list(results.variables.keys())
             order += list(results_b["algorithm"].data)
             results = xr.concat([results, results_b[vars]], dim="algorithm")
@@ -1545,7 +1546,7 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor, domain=self.domain)
+            results_b = baselines.load_baseline_results(self.base_sensor, domain=self.domain)
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1586,7 +1587,7 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor)
+            results_b = baselines.load_baseline_results(self.base_sensor)
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1626,7 +1627,7 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor)
+            results_b = baselines.load_baseline_results(self.base_sensor)
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1669,7 +1670,7 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.reference_sensor)
+            results_b = baselines.load_baseline_results(self.base_sensor)
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 

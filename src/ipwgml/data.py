@@ -17,19 +17,21 @@ from typing import Any, Dict, List, Optional, Union
 import re
 
 import click
+import numpy as np
 import requests
 #from requests_cache import CachedSession
 from requests import Session
 from rich.progress import Progress
+import xarray as xr
 
 from ipwgml.definitions import (
     ALL_INPUTS,
     GEOMETRIES,
-    REFERENCE_SENSORS,
+    BASE_SENSORS,
     SIZES,
     SPLITS,
 )
-from ipwgml.utils import get_median_time
+from ipwgml.utils import get_median_time, extract_samples
 from ipwgml import config
 import ipwgml.logging
 
@@ -220,7 +222,7 @@ def download_files(
 
 def download_missing(
         dataset_name: str,
-        reference_sensor: str,
+        base_sensor: str,
         geometry: str,
         split: str,
         source: str,
@@ -235,7 +237,7 @@ def download_missing(
     Args:
         dataset_name: The name of the dataset, i.e., 'satrain' for the Satellite
             Rain Estimation and Detection (SatRain) dataset.
-        reference_sensor: The reference sensor ('gmi' or 'atms')
+        base_sensor: The reference sensor ('gmi' or 'atms')
         geometry: The viewing geometry ('on_swath', or 'gridded')
         split: The name of the data split, i.e., 'training', 'validation', or 'testing'.
         subset: The subset, i.e, 'xs', 's', 'm', 'l', or 'xl'; only relevant
@@ -249,7 +251,7 @@ def download_missing(
     """
     local_files = get_local_files(
         dataset_name,
-        reference_sensor,
+        base_sensor,
         geometry,
         split,
         subset,
@@ -261,9 +263,9 @@ def download_missing(
     local_files = map(str, local_files.get(source, []))
     all_files = get_files_in_dataset(dataset_name)
     if split.lower() == "testing":
-        all_files = all_files[reference_sensor][split][domain][geometry][source]
+        all_files = all_files[base_sensor][split][domain][geometry][source]
     else:
-        all_files = all_files[reference_sensor][split][subset][geometry][source]
+        all_files = all_files[base_sensor][split][subset][geometry][source]
 
     missing = set(all_files) - set(local_files)
     downloaded = download_files(
@@ -277,7 +279,7 @@ def download_missing(
 
 def download_dataset(
         dataset_name: str,
-        reference_sensor: str,
+        base_sensor: str,
         input_data: Union[str, List[str]],
         split: str,
         geometry: str,
@@ -290,7 +292,7 @@ def download_dataset(
 
     Args:
         dataset_name: The IPWGML dataset to download.
-        reference_sensor: The reference sensor of the dataset.
+        base_sensor: The reference sensor of the dataset.
         input_data: The input data sources for which to download the data.
         split: Which split of the data to download.
         geometry: For which retrieval geometry to download the data.
@@ -309,7 +311,7 @@ def download_dataset(
 
     download_missing(
         dataset_name,
-        reference_sensor,
+        base_sensor,
         geometry,
         split,
         source="target",
@@ -326,7 +328,7 @@ def download_dataset(
     for inpt in input_data:
         download_missing(
             dataset_name,
-            reference_sensor,
+            base_sensor,
             geometry,
             split,
             source=inpt,
@@ -338,7 +340,7 @@ def download_dataset(
 
     paths = get_local_files(
         dataset_name=dataset_name,
-        reference_sensor=reference_sensor,
+        base_sensor=base_sensor,
         geometry=geometry,
         split=split,
         subset=subset,
@@ -350,7 +352,7 @@ def download_dataset(
 
 def get_local_files(
         dataset_name: str,
-        reference_sensor: str,
+        base_sensor: str,
         geometry: str,
         split: str,
         subset: str = "xl",
@@ -363,7 +365,7 @@ def get_local_files(
     Get all locally available files.
 
     Args:
-        reference_sensor: The name of the referene sensor.
+        base_sensor: The name of the referene sensor.
         geometry: The viewing geometry.
         split: The split name.
         subset: The subset name (only relevant for training and validation splits).
@@ -380,21 +382,20 @@ def get_local_files(
         data_path = config.get_data_path()
     else:
         data_path = Path(data_path)
-
     files = {}
     sources = ["ancillary", "geo", "geo_t", "geo_ir", "geo_ir_t", "target"]
-    for source in [reference_sensor,] + sources:
+    for source in [base_sensor,] + sources:
         files[source] = []
         if split != "testing":
             for size_ind in range(SIZES.index(subset) + 1):
-                rel_path = f"{dataset_name}/{reference_sensor}/{split}/{SIZES[size_ind]}/{geometry}/"
+                rel_path = f"{dataset_name}/{base_sensor}/{split}/{SIZES[size_ind]}/{geometry}/"
                 split_path = data_path / rel_path
                 source_files = sorted(list(split_path.glob(f"**/{source}_??????????????.nc")))
                 if relative_to is not None:
                     source_files = [path.relative_to(relative_to) for path in source_files]
                 files[source] += source_files
         else:
-            rel_path = f"{dataset_name}/{reference_sensor}/{split}/{domain}/{geometry}/"
+            rel_path = f"{dataset_name}/{base_sensor}/{split}/{domain}/{geometry}/"
             split_path = data_path / rel_path
             source_files = sorted(list(split_path.glob(f"**/{source}_??????????????.nc")))
             if relative_to is not None:
@@ -403,11 +404,12 @@ def get_local_files(
 
     if check_consistency:
         ref_times = set([get_median_time(path) for path in files["target"]])
-        for source in [reference_sensor,] + sources:
+        for source in [base_sensor,] + sources:
             if len(ref_times) == 0 or len(files[source]) == 0:
                 continue
             ref_times = set(ref_times)
             source_times = set([get_median_time(path) for path in files[source]])
+
             assert set(ref_times) == set([get_median_time(path) for path in files[source]])
 
     return files
@@ -448,14 +450,14 @@ def list_local_files() -> Dict[str, Any]:
 
 @click.command()
 @click.option("--data_path", type=str, default=None)
-@click.option("--reference_sensors", type=str, default=None)
+@click.option("--base_sensors", type=str, default=None)
 @click.option("--geometries", type=str, default=None)
 @click.option("--splits", type=str, default=None)
 @click.option("--subset", type=str, default=None)
 @click.option("--inputs", type=str, default=None)
 def cli(
     data_path: Optional[str] = None,
-    reference_sensors: Optional[str] = None,
+    base_sensors: Optional[str] = None,
     geometries: Optional[str] = None,
     splits: Optional[str] = None,
     subset: Optional[str] = None,
@@ -474,15 +476,15 @@ def cli(
             LOGGER.error("The provided 'data_path' does not exist.")
             return 1
 
-    if reference_sensors is None:
-        reference_sensors = REFERENCE_SENSORS
+    if base_sensors is None:
+        base_sensors = BASE_SENSORS
     else:
-        reference_sensors = [sensor.strip() for sensor in reference_sensors.split(",")]
-        for sensor in reference_sensors:
-            if sensor not in REFERENCE_SENSORS:
+        base_sensors = [sensor.strip() for sensor in base_sensors.split(",")]
+        for sensor in base_sensors:
+            if sensor not in BASE_SENSORS:
                 LOGGER.error(
-                    "The sensor '%s' is currently not supported. Currently supported reference_sensors "
-                    f"are {REFERENCE_SENSORS}."
+                    "The sensor '%s' is currently not supported. Currently supported base_sensors "
+                    f"are {BASE_SENSORS}."
                 )
                 return 1
 
@@ -535,7 +537,7 @@ def cli(
     LOGGER.info(f"Starting data download to {data_path}.")
 
 
-    for sensor in reference_sensors:
+    for sensor in base_sensors:
         for geometry in geometries:
             for inpt in inputs + ["target"]:
                 for split in splits:
@@ -549,7 +551,7 @@ def cli(
                         try:
                             download_missing(
                                 dataset_name=dataset,
-                                reference_sensor=sensor,
+                                base_sensor=sensor,
                                 geometry=geometry,
                                 split=split,
                                 source=inpt,
@@ -564,3 +566,95 @@ def cli(
                             )
 
     config.set_data_path(data_path)
+
+
+def load_tabular_data(
+        dataset_name: str,
+        base_sensor: str,
+        geometry: str,
+        split: str,
+        subset: str,
+        retrieval_input: List[str | Dict[str, Any] | "InputConfig"],
+        target_config: Optional["TargetConfig"] = None,
+        data_path: Optional[Path] = None
+):
+    """
+    Load data in tabular format.
+
+    Args:
+        dataset_name: The name of the dataset.
+        base_sensor: The base sensor.
+        geometry: The geometry, i.e., 'on_swath' or 'gridded'.
+        split: Training or validation.
+        subset: The subset: 'xs', 's', 'm', 'l', 'xl'
+        retrieval_input: A list specifying the retrieval input.
+        target_config: A config dict or object defining the target data configuration.
+        data_path: Optional path pointing to the local data path.
+
+    Return:
+        A tuple ``input_data, target`` with ``input_data`` being a dictionary containing
+        the retrieval input as separate xarray.Datasets and ``target`` containing the target
+        data.
+    """
+    from .input import parse_retrieval_inputs
+    from .target import TargetConfig
+
+    if not base_sensor.lower() in ["gmi", "atms"]:
+        raise ValueError("Base_Sensor must be one of ['gmi', 'atms'].")
+    base_sensor = base_sensor.lower()
+
+    if not geometry.lower() in ["gridded", "on_swath"]:
+        raise ValueError("Geomtry must be one of ['gridded', 'on_swath'].")
+    geometry = geometry.lower()
+
+    if not split.lower() in ["training", "validation", "testing"]:
+        raise ValueError(
+            "Split must be one of ['training', 'validation', 'testing']"
+        )
+
+    retrieval_input = parse_retrieval_inputs(retrieval_input)
+    if target_config is None:
+        target_config = TargetConfig()
+    if isinstance(target_config, dict):
+        target_config = TargetConfig(**target_config)
+
+    files = download_dataset(
+        dataset_name, base_sensor, retrieval_input, split, geometry, subset=subset, data_path=data_path
+    )
+
+    target_files = files["target"]
+
+    target_data = []
+    input_data = {inpt.name: [] for inpt in retrieval_input}
+
+    from tqdm import tqdm
+    for ind, target_file in tqdm(enumerate(target_files), total=len(target_files)):
+        data = xr.load_dataset(target_file)
+        valid = ~target_config.get_mask(data)
+        valid = xr.DataArray(
+            data=valid,
+            dims=data.surface_precip.dims
+        )
+        data = extract_samples(data, valid)
+        if "time" in data.coords:
+            data = data.reset_index("time")
+        target_data.append(data)
+
+        ref_time = get_median_time(target_file)
+
+        for inpt in retrieval_input:
+            input_time = get_median_time(files[inpt.name][ind])
+            if ref_time != input_time:
+                raise ValueError(
+                    "Encountered an input files %s that is inconsistent with the corresponding "
+                    "reference file %s. This indicates that the dataset has not been downloaded "
+                    "properly."
+                )
+            data = extract_samples(xr.load_dataset(files[inpt.name][ind]), valid)
+            if "time" in data.coords:
+                data = data.reset_index("time")
+            input_data[inpt.name].append(data)
+
+    target_data = xr.concat(target_data, dim="samples")
+    input_data = {name: xr.concat(data, dim="samples") for name, data in input_data.items()}
+    return input_data, target_data

@@ -16,7 +16,7 @@ def test_load_reference_precip(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
@@ -76,7 +76,7 @@ def test_load_reference_precip_tabular(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
@@ -138,7 +138,7 @@ def test_load_precip_mask_spatial(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
@@ -162,7 +162,7 @@ def test_load_precip_mask_tabular(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
@@ -188,7 +188,7 @@ def test_load_load_heavy_precip_mask_spatial(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",
@@ -212,7 +212,7 @@ def test_load_load_heavy_precip_mask_tabular(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         subset="xl",
         geometry="gridded",

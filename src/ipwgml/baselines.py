@@ -17,7 +17,7 @@ BASELINES_GMI = {
 
 
 def load_baseline_results(
-    reference_sensor: str,
+    base_sensor: str,
     domain: str = "conus",
     baselines: Optional[List[str]] = None,
 ) -> xr.Dataset:
@@ -31,7 +31,7 @@ def load_baseline_results(
     Return:
         An xarray.Dataset containing the baseline results.
     """
-    if reference_sensor.lower() == "gmi":
+    if base_sensor.lower() == "gmi":
         BASELINES = BASELINES_GMI
     else:
         raise ValueError(

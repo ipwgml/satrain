@@ -20,7 +20,7 @@ def satrain_gmi_gridded_train(tmp_path_factory):
     for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:
         download_missing(
             dataset_name="satrain",
-            reference_sensor="gmi",
+            base_sensor="gmi",
             geometry="gridded",
             split="training",
             source=source,
@@ -39,7 +39,7 @@ def satrain_atms_gridded_train(tmp_path_factory):
     for source in ["atms", "target", "geo_ir", "geo", "ancillary"]:
         download_missing(
             dataset_name="satrain",
-            reference_sensor="atms",
+            base_sensor="atms",
             geometry="gridded",
             split="training",
             source=source,
@@ -58,7 +58,7 @@ def satrain_atms_on_swath_train(tmp_path_factory):
     for source in ["atms", "target", "geo_ir", "geo", "ancillary"]:
         download_missing(
             dataset_name="satrain",
-            reference_sensor="atms",
+            base_sensor="atms",
             geometry="on_swath",
             split="training",
             source=source,
@@ -77,7 +77,7 @@ def satrain_gmi_on_swath_train(tmp_path_factory):
     for source in ["gmi", "target", "geo_ir", "geo", "ancillary"]:
         download_missing(
             dataset_name="satrain",
-            reference_sensor="gmi",
+            base_sensor="gmi",
             geometry="on_swath",
             split="training",
             source=source,
@@ -130,7 +130,7 @@ def satrain_atms_testing(tmp_path_factory):
         for geometry in ["gridded", "on_swath"]:
             download_missing(
                 dataset_name="satrain",
-                reference_sensor="atms",
+                base_sensor="atms",
                 geometry=geometry,
                 split="testing",
                 domain="conus",
@@ -150,7 +150,7 @@ def satrain_gmi_testing(tmp_path_factory):
         for geometry in ["gridded", "on_swath"]:
             download_missing(
                 dataset_name="satrain",
-                reference_sensor="gmi",
+                base_sensor="gmi",
                 geometry=geometry,
                 split="testing",
                 domain="conus",

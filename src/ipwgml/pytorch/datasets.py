@@ -45,7 +45,7 @@ class SatRainTabular(Dataset):
 
     def __init__(
         self,
-        reference_sensor: str,
+        base_sensor: str,
         geometry: str,
         split: str,
         subset: str = "xl",
@@ -60,7 +60,7 @@ class SatRainTabular(Dataset):
     ):
         """
         Args:
-            reference_sensor: The reference_sensor for which to load the benchmark dataset.
+            base_sensor: The base_sensor for which to load the benchmark dataset.
             geometry: Whether to load on_swath or regridded observations.
             split: Whether to load training ('training'), validation ('validation'), or
                  test ('testing') splits.
@@ -87,9 +87,9 @@ class SatRainTabular(Dataset):
         else:
             ipwgml_path = Path(ipwgml_path)
 
-        if not reference_sensor.lower() in ["gmi", "atms"]:
-            raise ValueError("Reference_Sensor must be one of ['gmi', 'atms'].")
-        self.reference_sensor = reference_sensor.lower()
+        if not base_sensor.lower() in ["gmi", "atms"]:
+            raise ValueError("Base_Sensor must be one of ['gmi', 'atms'].")
+        self.base_sensor = base_sensor.lower()
 
         if not geometry.lower() in ["gridded", "on_swath"]:
             raise ValueError("Geomtry must be one of ['gridded', 'on_swath'].")
@@ -128,7 +128,7 @@ class SatRainTabular(Dataset):
             for source in sources:
                 download_missing(
                     dataset_name="satrain",
-                    reference_sensor=self.reference_sensor,
+                    base_sensor=self.base_sensor,
                     geometry=self.geometry,
                     source=source,
                     split=self.split,
@@ -138,7 +138,7 @@ class SatRainTabular(Dataset):
                 )
         files = get_local_files(
             dataset_name="satrain",
-            reference_sensor=self.reference_sensor,
+            base_sensor=self.base_sensor,
             geometry=self.geometry,
             split=self.split,
             subset=self.subset,
@@ -307,7 +307,7 @@ class SatRainSpatial:
 
     def __init__(
         self,
-        reference_sensor: str,
+        base_sensor: str,
         geometry: str,
         split: str,
         subset: str = "xl",
@@ -320,7 +320,7 @@ class SatRainSpatial:
     ):
         """
         Args:
-            reference_sensor: The reference_sensor for which to load the benchmark dataset.
+            base_sensor: The base_sensor for which to load the benchmark dataset.
             geometry: Whether to load on_swath or regridded observations.
             split: Whether to load 'training', 'validation', or
                  'testing' splits.
@@ -345,9 +345,9 @@ class SatRainSpatial:
         else:
             ipwgml_path = Path(ipwgml_path)
 
-        if not reference_sensor.lower() in ["gmi", "atms"]:
-            raise ValueError("Reference_Sensor must be one of ['gmi', 'atms'].")
-        self.reference_sensor = reference_sensor.lower()
+        if not base_sensor.lower() in ["gmi", "atms"]:
+            raise ValueError("Base_Sensor must be one of ['gmi', 'atms'].")
+        self.base_sensor = base_sensor.lower()
 
         if not geometry.lower() in ["gridded", "on_swath"]:
             raise ValueError("Geomtry must be one of ['gridded', 'on_swath'].")
@@ -381,14 +381,14 @@ class SatRainSpatial:
         self.target = None
         self.ipwgml_path = ipwgml_path
 
-        dataset = f"satrain/{self.reference_sensor}/{self.split}/{self.geometry}/spatial/"
+        dataset = f"satrain/{self.base_sensor}/{self.split}/{self.geometry}/spatial/"
 
         if download:
             sources = set([inpt.name for inpt in retrieval_input] + ["target"])
             for source in sources:
                 download_missing(
                     dataset_name="satrain",
-                    reference_sensor=self.reference_sensor,
+                    base_sensor=self.base_sensor,
                     geometry=self.geometry,
                     source=source,
                     split=self.split,
@@ -398,7 +398,7 @@ class SatRainSpatial:
                 )
         files = get_local_files(
             dataset_name="satrain",
-            reference_sensor=self.reference_sensor,
+            base_sensor=self.base_sensor,
             geometry=self.geometry,
             split=self.split,
             subset=self.subset,
@@ -452,7 +452,7 @@ class SatRainSpatial:
         """
         files = get_local_files(
             dataset_name="satrain",
-            reference_sensor=self.reference_sensor,
+            base_sensor=self.base_sensor,
             geometry=self.geometry,
             split=self.split,
             subset=self.subset,
@@ -467,7 +467,7 @@ class SatRainSpatial:
         """
         files = get_local_files(
             dataset_name="satrain",
-            reference_sensor=self.reference_sensor,
+            base_sensor=self.base_sensor,
             geometry=self.geometry,
             split=self.split,
             subset=self.subset,

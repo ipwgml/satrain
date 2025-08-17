@@ -8,7 +8,8 @@ import pytest
 from ipwgml.data import (
     enable_testing,
     get_files_in_dataset,
-    get_local_files
+    get_local_files,
+    load_tabular_data
 )
 
 
@@ -65,3 +66,14 @@ def test_download_satrain_gmi_dataset(request, sensor_and_fixture):
     files = request.getfixturevalue(fixture)
     assert len(files[sensor]) == 5
     assert len(files["target"]) == 5
+
+
+@pytest.mark.parametrize("sensor_and_fixture", [["gmi", "satrain_gmi_on_swath_train"], ["atms", "satrain_atms_on_swath_train"]])
+def test_load_tabular_data(request, sensor_and_fixture):
+    sensor, fixture = sensor_and_fixture
+    data_path = request.getfixturevalue(fixture)
+
+    inpt, target = load_tabular_data("satrain", sensor, "on_swath", "training", "xs", [sensor], data_path=data_path)
+    assert sensor in inpt
+    assert 0 < inpt[sensor].samples.size
+    assert inpt[sensor].samples.size == target.samples.size

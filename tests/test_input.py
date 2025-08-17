@@ -83,7 +83,7 @@ def test_pmw_input(request, sensor_and_fixture):
 
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor=sensor,
+        base_sensor=sensor,
         split="training",
         geometry="gridded",
         subset="xl",
@@ -127,7 +127,7 @@ def test_ancillary_input(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         geometry="gridded",
         subset="xl",
@@ -152,7 +152,7 @@ def test_geo_ir_input(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         geometry="gridded",
         subset="xl",
@@ -178,7 +178,7 @@ def test_geo_input_gridded(satrain_gmi_gridded_train):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         geometry="gridded",
         subset="xl",
@@ -203,7 +203,7 @@ def test_geo_input_on_swath(satrain_gmi_on_swath_train):
     ipwgml_path = satrain_gmi_on_swath_train
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="training",
         geometry="on_swath",
         subset="xl",

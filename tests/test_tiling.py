@@ -43,7 +43,7 @@ def test_dataset_tiler(satrain_gmi_testing):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="testing",
         domain="conus",
         geometry="gridded",
@@ -65,7 +65,7 @@ def test_dataset_tiler_calculate_weights(satrain_gmi_testing):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="testing",
         domain="conus",
         geometry="on_swath",
@@ -111,7 +111,7 @@ def test_tiler_trivial(satrain_gmi_testing):
     """
     files = get_local_files(
         dataset_name="satrain",
-        reference_sensor="gmi",
+        base_sensor="gmi",
         split="testing",
         domain="conus",
         geometry="gridded",
