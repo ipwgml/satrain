@@ -97,7 +97,6 @@ class Metric:
         the function.
         """
         for name in self._buffers:
-            print(name)
             array = getattr(self, name)
             array[:] = 0.0
 
@@ -690,12 +689,9 @@ class SpectralCoherence(QuantificationMetric):
             co_left = coherence[1:][inds][ind_left]
             co_right = coherence[1:][inds][ind_right]
 
-            print(scale_left, scale_right, co_left, co_right)
-
             d_scl = scale_right - scale_left
             d_co = co_right - co_left
             frac_dist = (np.sqrt(1 / 2) - co_left) / d_co
-            print(frac_dist)
 
             res = scale_left + d_scl * frac_dist
 
