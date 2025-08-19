@@ -96,7 +96,7 @@ def normalize(
             data = 2.0 * (data - x_min) / (x_max - x_min + 1e-6) - 1.0
         else:
             raise ValueError(
-                "The normalization strategy '%s' is not supported. Supported strategies are "
+                f"The normalization strategy '{how}' is not supported. Supported strategies are "
                 "'standardize' and 'minmax'."
             )
 
@@ -156,6 +156,8 @@ class InputConfig(ABC):
             return Ancillary(**kwargs)
         elif name.lower() == "geo":
             return Geo(**kwargs)
+        elif name.lower() == "seviri":
+            return Seviri(**kwargs)
         elif name.lower() == "geo_t":
             return GeoT(**kwargs)
         elif name.lower() == "geo_ir":
@@ -632,7 +634,7 @@ class GeoIRT(InputConfig):
 class GeoT(InputConfig):
     """
     The Geo class represents GOES-16 ABI  observations in the retrieval input.
-    The full IR input comprises 2 15-minute observations before the median
+    The full IR input comprises 2 10-minute observations before the median
     overpass time and 2 after the median overpass time.
     """
     def __init__(
@@ -729,7 +731,7 @@ class GeoT(InputConfig):
 class Geo(InputConfig):
     """
     The Geo class represents GOES-16 ABI  observations in the retrieval input.
-    The full IR input comprises 2 15-minute observations before the median
+    The full IR input comprises 2 10-minute observations before the median
     overpass time and 2 after the median overpass time.
     """
     def __init__(
@@ -769,6 +771,89 @@ class Geo(InputConfig):
         stats = xr.load_dataset(stats_file, engine="h5netcdf")
         mask = np.zeros((4, 16), dtype=bool)
         mask[3, self.channels] = True
+        mask = mask.ravel()
+        stats = stats[{"features": mask}]
+        return stats
+
+    def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
+        """
+        Load GEO data from NetCDF file.
+
+        Args:
+            geo_data_file: A Path object pointing to the file from which to load the input data.
+            target_time: An xarray.DataArray containing the target times, which will be used to
+                to interpolate the input observations to the nearest time step if 'self.nearest'
+                is 'True'.
+
+        Return:
+            A dicitonary mapping the single key 'obs_geo' to an array containing the GEO
+            observation from the desired time steps. The returned array will have the
+            time and channel dimensions along the leading axes of the array.
+        """
+        with open_if_required(geo_data_file) as geo_data:
+            obs = geo_data.observations[{"channel": self.channels}].load()
+            obs = obs.transpose("channel", ...).data.copy()
+        del geo_data
+        obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
+        return {"obs_geo": obs.copy()}
+
+    @property
+    def features(self) -> Dict[str, int]:
+        """
+        Dictionary mapping names of the input data variables loaded by the
+        Geo input class to the corresponding number of features.
+        """
+        n_chans = len(self.channels)
+        return {"obs_geo": n_chans}
+
+
+@dataclass
+class Seviri(InputConfig):
+    """
+    Special instance of the Geo class load observations from the SEVIRI sensor of the 'austria' domain.
+    """
+    def __init__(
+            self,
+            channels: Optional[List[int]] = None,
+            normalize: Optional[str] = None,
+            nan: Optional[float] = None
+    ):
+        """
+        Args:
+            channels: Optional list of zero-based indices identifying the GOES channels
+                to load.
+            normalize: An optional string specifying how to normalize the input data.
+            nan: An optional float value that will be used to replace missing values
+                in the input data.
+        """
+        self.all_goes_channels = [0, 1, 2, 4, 6, 7, 9, 10, 11, 13, 14, 15]
+        if channels is None:
+            channels = list(range(12))
+        self._channels = np.array(channels)
+        self.normalize = normalize
+        self.nan = nan
+
+    @property
+    def name(self) -> str:
+        return "geo"
+
+    @cached_property
+    def channels(self):
+        return self._channels
+
+    @cached_property
+    def goes_channels(self):
+        return [self.all_goes_channels[ind] for ind in self._channels]
+
+    @cached_property
+    def stats(self) -> xr.Dataset:
+        """
+        xarray.Dataset containing summary statistics for the input.
+        """
+        stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo.nc"
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")
+        mask = np.zeros((4, 16), dtype=bool)
+        mask[3, self.goes_channels] = True
         mask = mask.ravel()
         stats = stats[{"features": mask}]
         return stats
