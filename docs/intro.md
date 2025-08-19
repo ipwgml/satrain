@@ -1,28 +1,32 @@
-# The Satellite-based Rain Estimation and Detection (SatRain) benchmark dataset created by the International Precipitation Working Group
+# SatRain: A Benchmark Dataset for Machine-Learning–Based Satellite Rain Estimation and Detection
 
-The ipwgml Python package provides tools for accessing and using the Satellite-Based Rain Estimation and Detection (SatRain) benchmark dataset developed by the Machine Learning Working Group of the International Precipitation Working Group (IPWG). The dataset provides a machine-learning-ready benchmark for assessing  machine-learning-based  satellite precipitation estimation and detection algorithms.
+The `ipwgml` Python package provides tools for accessing and working with **SatRain: A machine-learning benchmark dataset for satellite-based estimation and detection of rain**.  
+SatRain was developed by the Machine Learning Working Group of the International Precipitation Working Group (IPWG) to provide a standardized reference for training, testing, and comparing machine-learning precipitation retrieval algorithms.  
 
-## The SatRain benchmark dataset
+By combining high-quality satellite observations with ground-based radar reference data, SatRain offers a machine-learning–ready benchmark that supports both model development and rigorous evaluation across diverse retrieval scenarios.
 
-The SatRain benchmark dataset combines satellite imagery from multiple platforms and sensors with gauge-corrected ground-based radar precipitation measurements. It serves as a comprehensive resource for developing and benchmarking precipitation retrieval algorithms using machine learning techniques. The dataset supports various retrieval scenarios by offering multi-sensor collocated observations, making it suitable not only for the evaluation of existing ML techniques but also the development of advanced ML methods for multi-sensor and temporal fusion.
+## The SatRain Benchmark Dataset
 
+SatRain integrates satellite imagery from multiple platforms and sensors with gauge-corrected, ground-based radar precipitation measurements. This combination creates a comprehensive resource for advancing precipitation retrievals with machine learning.  
+
+The dataset enables:  
+- **Algorithm development** by providing collocated, multi-sensor input data.  
+- **Robust benchmarking** of existing retrieval methods in a reproducible setting.  
+- **Exploration of advanced techniques** such as sensor synergy, temporal fusion, and the use of ancillary datasets.  
 
 ```{figure} /figures/example_scene.png
 ---
 height: 400px
 name: example_scene
 ---
-Retrieval input and target data of the SatRain benchmark dataset. Panels (a), (b), and (c) show selected, collocated observations from the passive microwave (PMW) observations (Panel (a)) and geostationary visible (Panel (b)) and infrared observations that make up the input data of the SatRain data. Panel (d) shows the precipitation-radar-based precipitation estimates that are the retrieval targets. Grey dashed, and dash-dotted lines mark the outlines of the training samples extracted from this collocation scene for the gridded and on-swath observations. Black dashed and dash-dotted lines mark the sample training scenes displayed in Panel (e) and (f).
+Example scene from the SatRain benchmark dataset. Panels (a)-(c) show collocated observations from passive microwave (a), geostationary visible (b), and infrared (c) sensors, which together form the retrieval inputs. Panel (d) shows the radar-based precipitation estimates used as reference targets. Grey dashed and dash-dotted lines mark training sample outlines for gridded and on-swath observations. Panels (e) and (f) display extracted training samples corresponding to the highlighted regions.
 
-```
+## Features
 
-### Features
+The key features provided by SatRain and the ipwgml package are:
 
-The principal features provided by the SatRain dataset and the ``ipwgml`` package are:
+- **ML-ready dataset**: SatRain delivers collocated two- and three-dimensional observation tensors paired with reference precipitation estimates. The ipwgml package includes ready-to-use PyTorch dataloaders for both image and tabular formats, along with cloud-enabled example notebooks demonstrating training and evaluation of fully connected and convolutional neural networks.
 
+- **Flexible evaluation framework:** The package provides functionality for evaluating any precipitation retrieval against SatRain’s test data, enabling rapid development–evaluation cycles and direct comparison of machine-learning and conventional retrieval algorithms.
 
-1. **ML-ready dataset****: The SatRain dataset provides collocated two- and three-dimensional observation tensors and corresponding reference precipitation estimates that can be used to train various machine-learning models. Additionally, the ``ipwgml`` package provides PyTorch dataloaders for loading the data in image and tabular format as well as cloud-enabled example notebooks demonstrating the training and evaluations of fully-connected and convolutional neural network models. 
-
-2. **Flexible evaluation framework:** The ``ipwgml`` package provides functionality to evaluate any precipitation retrieval against the SatRain test data, thus supporting fast development-evaluation cycles and allowing direct comparison of ML-based and conventional retrievals.
-
-3. **Multi-sensor and multi-time-step observations:** The SatRain input data comprises observations from multiple satellite sensors, time-resolved observations from geostationary platforms, as well ancillary data from a reanlysis dataset. The dataset thus provides a comprehensive base for exploring sensor synergies, temporal fusion, and the benefits of ancillary data.
+- **Multi-sensor and temporal coverage:** SatRain incorporates observations from multiple satellite sensors, time-resolved geostationary platforms, and ancillary reanalysis data. This rich input space supports studies of sensor synergy, temporal fusion, and the added value of auxiliary datasets.
