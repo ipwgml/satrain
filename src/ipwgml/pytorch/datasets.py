@@ -7,10 +7,10 @@ The :class:`SatRainTabular` will load data in tabular format while the
 :class:`SatRainSpatial` will load data in spatial format.
 
 """
-
 from datetime import datetime
 from functools import cache, cached_property, partial
 import gc
+import logging
 from math import ceil
 import multiprocessing
 import os
@@ -32,6 +32,8 @@ from ipwgml.input import InputConfig, parse_retrieval_inputs
 from ipwgml.target import TargetConfig
 from ipwgml.utils import get_median_time, extract_samples
 
+
+LOGGER = logging.getLogger(__name__)
 
 
 class SatRainTabular(Dataset):
@@ -165,6 +167,8 @@ class SatRainTabular(Dataset):
         for inpt in self.retrieval_input:
             setattr(self, inpt.name + "_data", [])
 
+        LOGGER.info("Loading %s data from %s training scenes.", self.split, len(target_files))
+
         for ind, target_file in enumerate(target_files):
             target_data = xr.load_dataset(target_file)
             valid = ~self.target_config.get_mask(target_data)
@@ -172,7 +176,10 @@ class SatRainTabular(Dataset):
                 data=valid,
                 dims=target_data.surface_precip.dims
             )
-            self.target_data.append(extract_samples(target_data, valid))
+            target_data = extract_samples(target_data, valid)
+            if "time" in target_data.coords:
+                target_data = target_data.reset_index("time")
+            self.target_data.append(target_data)
 
             ref_time = get_median_time(target_file)
 
@@ -190,6 +197,7 @@ class SatRainTabular(Dataset):
                 getattr(self, inpt.name + "_data").append(input_data)
 
         self.target_data = xr.concat(self.target_data, dim="samples")
+        print(self.target_data)
         for inpt in self.retrieval_input:
             input_data = xr.concat(getattr(self, inpt.name + "_data"), dim="samples")
             setattr(self, inpt.name + "_data", input_data)
