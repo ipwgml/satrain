@@ -20,6 +20,8 @@ height: 400px
 name: example_scene
 ---
 Example scene from the SatRain benchmark dataset. Panels (a)-(c) show collocated observations from passive microwave (a), geostationary visible (b), and infrared (c) sensors, which together form the retrieval inputs. Panel (d) shows the radar-based precipitation estimates used as reference targets. Grey dashed and dash-dotted lines mark training sample outlines for gridded and on-swath observations. Panels (e) and (f) display extracted training samples corresponding to the highlighted regions.
+```
+
 
 ## Features
 
