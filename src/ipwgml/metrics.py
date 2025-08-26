@@ -131,6 +131,11 @@ class QuantificationMetric(Metric):
     Helper class to identify metrics to assess precipitation quantification.
     """
 
+class ProbabilisticQuantificationMetric(Metric):
+    """
+    Helper class to identify metrics to assess precipitation quantification.
+    """
+
 
 class DetectionMetric(Metric):
     """
@@ -1018,3 +1023,89 @@ class PRCurve(ProbabilisticDetectionMetric):
         results.recall.attrs["full_name"] = "Recall"
         results.recall.attrs["unit_name"] = ""
         return results
+
+
+class CRPS(ProbabilisticQuantificationMetric):
+    """
+    The continuous ranked probability score supporting both deterministic and quantile predictions.
+
+    This metric calculates the CRPS using
+    .. math::
+
+      \\text{CRPS} = 2.0 \\int_0^1 (\\tau - I_{y_\\text{target} < y_\\text{pred}}) (y_\\text{target} - y_\\text{pred}) d\\tau
+
+    If the prediction is deterministic, this metric simply calculates the mean-absolute error. If the prediction consists
+    of several quantiles the integral above is approximated using the trapezoidal rule.
+    """
+    def __init__(self):
+        super().__init__(
+            buffers={
+                "crps": ((1,), np.float64),
+                "counts": ((1,), np.int64),
+            }
+        )
+
+    def update(
+            self,
+            prediction: np.ndarray,
+            target: np.ndarray,
+            taus: Optional[np.ndarray] = None
+    ) -> None:
+        """
+        Update metric using a probabilistic prediction.
+
+        Args:
+             prediction: An np.ndarray containing the predicted values. This can be deterministic
+                  values or a probabilistic prediction in the form of several quantiles of the distribution.
+             target: An np.ndarray containing the reference values.
+             tau: The quantile fraction corresponding to the probabili
+        """
+        pred = prediction
+        if pred.ndim == target.ndim:
+            pred = pred[None]
+            taus = 0.5 * np.ones(1)
+        else:
+            if prediction.ndim != target.ndim + 1:
+                raise ValueError(
+                    "The prediction for the CRPS score should have the same or one more dimension "
+                    "than the target"
+                )
+            if taus is None:
+                raise ValueError(
+                    "If the prediction for the CRPS score has one more dimension than the target, the "
+                    "corresponding quantiles must be provided as 'tau'."
+                )
+
+        valid = np.isfinite(target)
+
+        pred = pred[..., valid]
+        target = target[valid][None]
+        target = np.broadcast_to(target, pred.shape)
+        taus = np.broadcast_to(taus[..., None], target.shape)
+        diff = target - pred
+        crps = np.where(0 < diff, taus, taus - 1.0) * diff
+        if crps.shape[0] == 1:
+            crps = 2.0 * np.abs(crps).sum()
+        else:
+            crps = 2.0 * np.trapz(crps, x=taus, axis=0)
+
+        with self.lock:
+            self.crps += crps.sum()
+            self.counts += valid.sum()
+
+
+    def compute(self) -> xr.Dataset:
+        """
+        Calculate the bias for all results passed to this metric object.
+
+        Return:
+            An xarray.Dataset containing a single, scalar variable 'bias' or 'bias_{name}'.
+
+        """
+        with np.errstate(invalid='ignore'):
+            crps = self.crps / self.counts
+
+        crps = xr.Dataset({"crps": crps[0]})
+        crps.crps.attrs["full_name"] = "CRPS"
+        crps.crps.attrs["unit"] = ""
+        return crps

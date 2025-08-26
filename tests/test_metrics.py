@@ -13,6 +13,7 @@ import xarray as xr
 from ipwgml.metrics import (
     ValidFraction,
     Bias,
+    CRPS,
     Metric,
     MAE,
     MSE,
@@ -477,3 +478,35 @@ def test_prcurve():
 
     assert np.isclose(pr_curve.recall.data[0], 1.0, rtol=5e-2).all()
     assert np.isclose(pr_curve.area_under_curve.data, 0.5, rtol=5e-2)
+
+
+
+def crps_normal(mu: float, sigma: float, x: np.ndarray) -> np.ndarray:
+    """
+    CRPS score for normal distribution following Gneiting and Raftery.
+    """
+    s_1 = 2.0 * stats.norm.pdf((x - mu) / sigma)
+    s_2 = (x - mu) / sigma * (2.0 * stats.norm.cdf((x - mu) / sigma) - 1.0)
+    return sigma * (-1.0 / np.sqrt(np.pi) + s_1 + s_2)
+
+
+def test_crps():
+    """
+    Test the calculation of the CPRS and ensure that for a deterministic prediction the MAE
+    is returned.
+    """
+    target = np.random.rand(128, 128)
+    pred = np.random.rand(128, 128)
+
+    metric = CRPS()
+    metric.update(target, pred)
+    taus = np.linspace(0, 1, 34)[1:-1]
+    quantiles = np.tile(stats.norm.ppf(taus)[..., None], (1, 128))
+    y = np.random.normal(size=(128,))
+
+    metric = CRPS()
+    metric.update(quantiles, y, taus)
+    crps = metric.compute()
+    crps = crps.crps.data
+
+    assert np.isclose(crps, crps_normal(0.0, 1.0, y).mean(), rtol=1e-2)
