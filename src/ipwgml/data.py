@@ -4,9 +4,9 @@ ipwgml.data
 
 Provides functionality to access IPWG ML datasets.
 """
-
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import cache
 import gzip
 import json
 import logging
@@ -88,6 +88,7 @@ def load_json_maybe_gzipped(path: Path):
         return json.load(f)
 
 
+@cache
 def get_files_in_dataset(dataset_name: str) -> Dict[str, Any]:
     """
     Lists all available files for a given dataset.
@@ -263,9 +264,9 @@ def download_missing(
     local_files = map(str, local_files.get(source, []))
     all_files = get_files_in_dataset(dataset_name)
     if split.lower() == "testing":
-        all_files = all_files[base_sensor][split][domain][geometry][source]
+        all_files = all_files[base_sensor][split][domain][geometry].get(source, [])
     else:
-        all_files = all_files[base_sensor][split][subset][geometry][source]
+        all_files = all_files[base_sensor][split][subset][geometry].get(source, [])
 
     missing = set(all_files) - set(local_files)
     downloaded = download_files(
@@ -410,7 +411,8 @@ def get_local_files(
             ref_times = set(ref_times)
             source_times = set([get_median_time(path) for path in files[source]])
 
-            assert set(ref_times) == set([get_median_time(path) for path in files[source]])
+            print(ref_times.symmetric_difference(source_times))
+            assert set(ref_times) == source_times
 
     return files
 
@@ -444,17 +446,42 @@ def list_local_files() -> Dict[str, Any]:
     List available ipwgml files.
     """
     data_path = config.get_data_path()
-    files = list_local_files_rec(data_path)
+    files = list_local_files_rec(data_path / "satrain")
     return files
 
 
 @click.command()
-@click.option("--data_path", type=str, default=None)
-@click.option("--base_sensors", type=str, default=None)
-@click.option("--geometries", type=str, default=None)
-@click.option("--splits", type=str, default=None)
-@click.option("--subset", type=str, default=None)
-@click.option("--inputs", type=str, default=None)
+@click.option("--data_path", type=str, default=None, help="The local directory in which to store the SatRain dataset.")
+@click.option(
+    "--base_sensors",
+    type=str,
+    default=None,
+    help="Comma-separated list of he base sensors to download."
+)
+@click.option(
+    "--geometries",
+    type=str,
+    default=None,
+    help="Comma-separated list of the geometries to download ('on_swath', 'gridded' or both)."
+)
+@click.option(
+    "--splits",
+    type=str,
+    default=None,
+    help="Comma-separated list of the splits to ddownload ('training', 'validation', 'testing')"
+)
+@click.option(
+    "--subset",
+    type=str,
+    default=None,
+    help="The subset to download."
+)
+@click.option(
+    "--inputs",
+    type=str,
+    default=None,
+    help="Comma-separated list of the input sources to download ('gmi', 'atms', 'geo', 'geo_ir', 'geo_t', 'geo_ir_t', 'ancillary')"
+)
 def cli(
     data_path: Optional[str] = None,
     base_sensors: Optional[str] = None,

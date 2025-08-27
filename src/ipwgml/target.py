@@ -38,9 +38,9 @@ class TargetConfig:
     """
 
     target: str = "surface_precip"
-    min_rqi: float = 0.9
+    min_rqi: float = 0.5
     min_valid_fraction: float = 1.0
-    no_snow: bool = True
+    no_snow: bool = False
     no_hail: bool = False
     min_gcf: Optional[float] = None
     max_gcf: Optional[float] = None
@@ -48,13 +48,13 @@ class TargetConfig:
     def __init__(
         self,
         target: str = "surface_precip",
-        min_rqi: float = 0.9,
-        min_valid_fraction: float = 0.9,
+        min_rqi: float = 0.5,
+        min_valid_fraction: float = 0.5,
         no_snow: bool = False,
         no_hail: bool = False,
         min_gcf: Optional[float] = None,
         max_gcf: Optional[float] = None,
-        precip_threshold: float = 1e-3,
+        precip_threshold: float = 1e-1,
         heavy_precip_threshold: float = 1e1
     ):
         """

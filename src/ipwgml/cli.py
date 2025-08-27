@@ -87,8 +87,13 @@ Data path: {current_data_path}
     table.add_column("Relative path", justify="left")
     table.add_column("# files", justify="right")
 
+    file_cts = {}
     files = flatten(data.list_local_files())
     for rel_path, n_files in files.items():
+        key = Path(rel_path).parent.parent.parent
+        file_cts[key] = file_cts.setdefault(key, 0) + n_files
+
+    for rel_path, n_files in file_cts.items():
         table.add_row(str(rel_path), str(n_files))
 
     rich.print(table)
