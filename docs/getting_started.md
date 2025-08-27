@@ -1,8 +1,7 @@
 # Getting started
 
-The ipwgml Python package simplifies accessing and using the Satellite
-Precipitation Retrieval (SPR) benchmark dataset. While the full dataset can be
-downloaded from [here](https://rain.atmos.colostate.edu/gprof_nn/ipwgml/), the recommended way to obtain the data is through the ``ipwgml`` package.
+The easiest way to get started using the SatRain dataset is through the ``ipwgml`` Python package. While the full dataset can be
+manually downloaded from [here](https://rain.atmos.colostate.edu/ipwgml_2/ipwgml/), the ``ipwgml`` package provides functionality to automate the data download and the loading of the training and testing data.
 
 
 ## Installing the ``ipwgml`` package
@@ -11,31 +10,32 @@ downloaded from [here](https://rain.atmos.colostate.edu/gprof_nn/ipwgml/), the r
 To install the latest version of ipwgml, use the following command:
 
 ```
-pip install ipwgml[complete]@git+https://github.com/simonpf/ipwgml
+pip install ipwgml[complete]@git+https://github.com/ipwgml/ipwgml
 ```
 
 > **Note**: The above command installs all dependencies required to run the examples included here. If
-this is a concern, use ``pip install git+https://github.com/simonpf/ipwgml`` for a minimal installation.
+this is a concern, use ``pip install git+https://github.com/ipwgml/ipwgml`` for a minimal installation.
 
 
-After installation, the ipwgml command should be available from the command line.
+Installing the ``ipwgml`` package is all that is required to start using the package. If you just want to quickly test the dataset feel free to skip ahead to the neural net [examples](examples). Read on, to learn how to configure where the SatRain data is stored on your machine.
 
 ## Optional: Data download using the ``ipwgml`` command
 
 ```{note}
-Most functionality of the ``ipwgml`` dataset that requires access to the SPR dataset will automatically download the required files. Therefore, the following steps are not
+Most functionality of the ``ipwgml`` dataset that requires access to the SatRain dataset will automatically download the required files. Therefore, the following steps are not
 strictly required to get started using the package.
 ```
 
-Use the ipwgml command-line interface to download parts or all of the SPR dataset:
+Use the ipwgml command-line interface to download parts or all of the SatRain dataset:
 
 ```
-ipwgml download --data_path /path/to/store/data --sensors gmi --splits training,validation,testing --geometries gridded --format spatial
+ipwgml download --data_path /path/to/store/data --sensors gmi --subset s --splits training,validation,testing --geometries gridded
 ```
 
-This will download the gridded SPR training, validation, and testing data. The ``ipwgml download`` command takes the following options:
+This will download the gridded SatRain training, validation, and testing data. The ``ipwgml download`` command takes the following options:
 
  - ``--sensors`` A comma-separated lists of the sensors for which to download the data.
+ - ``--subset`` The size of the subset to download. Choose ``xl`` for the full dataset.
  - ``--splits`` A comma-separated lists of the data splits to download. Available options are ``training``, ``validation``, ``testing``, and ``evaluation``.
  - ``--geometries`` A comma-separated lists of the data geometries. Available options are ``gridded`` for gridded
    observations and ``on_swath`` for the data on the PMW swath.
