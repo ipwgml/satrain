@@ -410,7 +410,6 @@ def get_local_files(
                 continue
             ref_times = set(ref_times)
             source_times = set([get_median_time(path) for path in files[source]])
-
             assert set(ref_times) == source_times
 
     return files

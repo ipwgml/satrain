@@ -197,7 +197,6 @@ class SatRainTabular(Dataset):
                 getattr(self, inpt.name + "_data").append(input_data)
 
         self.target_data = xr.concat(self.target_data, dim="samples")
-        print(self.target_data)
         for inpt in self.retrieval_input:
             input_data = xr.concat(getattr(self, inpt.name + "_data"), dim="samples")
             setattr(self, inpt.name + "_data", input_data)
