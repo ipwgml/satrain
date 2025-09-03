@@ -5,9 +5,9 @@ Tests for the ipwgml.target module.
 import numpy as np
 import xarray as xr
 
-from ipwgml.utils import extract_samples
-from ipwgml.data import get_local_files
-from ipwgml.target import TargetConfig
+from satrain.utils import extract_samples
+from satrain.data import get_local_files
+from satrain.target import TargetConfig
 
 
 def test_load_reference_precip(satrain_gmi_gridded_train):

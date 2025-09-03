@@ -4,7 +4,7 @@ Tests for the ipwgml.pytorch.data module.
 
 import torch
 
-from ipwgml.pytorch.datasets import SatRainTabular, SatRainSpatial
+from satrain.pytorch.datasets import SatRainTabular, SatRainSpatial
 
 
 def test_dataset_satrain_tabular(satrain_gmi_on_swath_train):

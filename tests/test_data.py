@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from ipwgml.data import (
+from satrain.data import (
     enable_testing,
     get_files_in_dataset,
     get_local_files,

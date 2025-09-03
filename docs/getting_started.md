@@ -65,8 +65,8 @@ for subsequent use of the ``ipwgml`` package. A configuration file storing the
 ``data_path`` will also be created when the ``ipwgml download`` command is
 invoked with the ``--data_path`` option.
 
-Alternatively, the ``data_path`` can be set using the ``IPWGML_DATA_PATH`` environment
-variable. The path in ``IPWGML_DATA_PATH`` will overwrite the setting in the user's configuration
+Alternatively, the ``data_path`` can be set using the ``SATRAIN_DATA_PATH`` environment
+variable. The path in ``SATRAIN_DATA_PATH`` will overwrite the setting in the user's configuration
 file.
 
 The ``ipwgml config show`` command can be used to find out the value of the ``ipwgml`` data path

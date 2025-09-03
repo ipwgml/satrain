@@ -7,8 +7,8 @@ from pathlib import Path
 import random
 import string
 
-import ipwgml.config
-from ipwgml.config import get_data_path, set_data_path, show
+import satrain.config
+from satrain.config import get_data_path, set_data_path, show
 
 
 def random_string(length: int) -> str:
@@ -29,16 +29,16 @@ def random_string(length: int) -> str:
 
 def test_get_data_path(tmp_path, monkeypatch):
     """
-    Get IPWGML data path and ensure that:
+    Get SATRAIN data path and ensure that:
       - It points to the current working directory if no environment variable is set.
-      - It points to the path identified by the "IPWGML_PATH" environment variable.
+      - It points to the path identified by the "SATRAIN_PATH" environment variable.
     """
-    monkeypatch.setattr(ipwgml.config, "CONFIG_DIR", Path(random_string(64)))
-    monkeypatch.delenv("IPWGML_DATA_PATH", raising=False)
+    monkeypatch.setattr(satrain.config, "CONFIG_DIR", Path(random_string(64)))
+    monkeypatch.delenv("SATRAIN_DATA_PATH", raising=False)
     path = get_data_path()
     assert path == Path(os.getcwd())
 
-    monkeypatch.setenv("IPWGML_DATA_PATH", str(tmp_path))
+    monkeypatch.setenv("SATRAIN_DATA_PATH", str(tmp_path))
     path = get_data_path()
     assert path == tmp_path
 
@@ -47,7 +47,7 @@ def test_set_data_path(tmp_path, monkeypatch):
     """
     Test setting the data path and ensure that it is read back in correctly.
     """
-    monkeypatch.setattr(ipwgml.config, "CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(satrain.config, "CONFIG_DIR", tmp_path)
     set_data_path(tmp_path)
     path = get_data_path()
     assert path == tmp_path

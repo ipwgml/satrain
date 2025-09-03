@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from ipwgml.data import get_local_files
-from ipwgml.input import (
+from satrain.data import get_local_files
+from satrain.input import (
     normalize,
     InputConfig,
     GMI,

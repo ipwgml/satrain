@@ -1,6 +1,6 @@
 import pytest
 
-from ipwgml.data import (
+from satrain.data import (
     enable_testing,
     download_missing,
     download_dataset

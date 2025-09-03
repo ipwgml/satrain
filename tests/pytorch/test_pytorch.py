@@ -7,8 +7,8 @@ import pytest
 import torch
 from torch import nn
 
-from ipwgml.evaluation import Evaluator
-from ipwgml.pytorch import PytorchRetrieval
+from satrain.evaluation import Evaluator
+from satrain.pytorch import PytorchRetrieval
 
 
 class DummyRetrieval(nn.Module):

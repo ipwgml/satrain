@@ -3,7 +3,7 @@ Tests for the ipwgml.baselines module.
 """
 import pytest
 
-from ipwgml.baselines import load_baseline_results
+from satrain.baselines import load_baseline_results
 
 
 @pytest.mark.parametrize("base_sensor", ["gmi", "atms"])

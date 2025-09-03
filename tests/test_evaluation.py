@@ -9,18 +9,18 @@ import pytest
 import xarray as xr
 
 
-from ipwgml.data import (
+from satrain.data import (
     enable_testing,
 )
-from ipwgml.evaluation import (
+from satrain.evaluation import (
     InputFiles,
     Evaluator,
     load_retrieval_input_data,
     process_scene_spatial,
     process_scene_tabular,
 )
-from ipwgml.input import InputConfig, GMI, Ancillary
-from ipwgml.metrics import Metric, Bias, MSE, CorrelationCoef
+from satrain.input import InputConfig, GMI, Ancillary
+from satrain.metrics import Metric, Bias, MSE, CorrelationCoef
 
 
 enable_testing()

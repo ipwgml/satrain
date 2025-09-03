@@ -10,7 +10,7 @@ from scipy.fftpack import idctn
 from scipy import stats
 import xarray as xr
 
-from ipwgml.metrics import (
+from satrain.metrics import (
     ValidFraction,
     Bias,
     CRPS,

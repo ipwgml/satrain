@@ -5,8 +5,8 @@ Tests for the ipwgml.tiling module.
 import numpy as np
 import xarray as xr
 
-from ipwgml.data import get_local_files
-from ipwgml.tiling import get_starts_and_clips, DatasetTiler
+from satrain.data import get_local_files
+from satrain.tiling import get_starts_and_clips, DatasetTiler
 
 
 def test_get_starts_and_clips():

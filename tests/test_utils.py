@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 
 
-from ipwgml.utils import open_if_required
+from satrain.utils import open_if_required
 
 
 def test_open_if_required(tmp_path):

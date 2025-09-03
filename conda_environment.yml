@@ -1,4 +1,4 @@
-name: ipwgml
+name: satrain
 channels:
   - pytorch
   - nvidia
