@@ -238,7 +238,7 @@ def download_missing(
     Args:
         dataset_name: The name of the dataset, i.e., 'satrain' for the Satellite
             Rain Estimation and Detection (SatRain) dataset.
-        base_sensor: The reference sensor ('gmi' or 'atms')
+        base_sensor: The base sensor ('gmi' or 'atms')
         geometry: The viewing geometry ('on_swath', or 'gridded')
         split: The name of the data split, i.e., 'training', 'validation', or 'testing'.
         subset: The subset, i.e, 'xs', 's', 'm', 'l', or 'xl'; only relevant
@@ -293,7 +293,7 @@ def download_dataset(
 
     Args:
         dataset_name: The SATRAIN dataset to download.
-        base_sensor: The reference sensor of the dataset.
+        base_sensor: The base sensor of the dataset.
         input_data: The input data sources for which to download the data.
         split: Which split of the data to download.
         geometry: For which retrieval geometry to download the data.
@@ -414,6 +414,80 @@ def get_local_files(
 
     return files
 
+
+def get_files(
+        base_sensor: str,
+        split: str,
+        input_data: Union[str, List[str]],
+        geometry: str,
+        domain: str = "conus",
+        subset: str = "xl",
+        data_path: Optional[Union[str, Path]] = None,
+        download: bool = True
+) -> Dict[str, List[Path]]:
+    """
+    Get files in SatRain dataset.
+
+    Args:
+        base_sensor: The base sensor of the dataset.
+        split: Which split of the data to get (training, validation, testing).
+        input_data: List of the input data sources ('gmi', 'atms', 'geo', 'geo_t', 'geo_ir', 'geo_ir_t', 'ancillary')
+        geometry: For which retrieval geometry to download the data.
+        domain: Name of the domain for the testing data ('austria', 'conus', 'korea')
+        subset: The subset to download (xs, s, m, l, xl).
+        data_path: Optional path pointing to the path to store the data.
+        download: Download missing data.
+
+    Return:
+        A dictionary listing locally available files for each input data
+        source and the target data.
+    """
+    if data_path is None:
+        data_path = config.get_data_path()
+    else:
+        data_path = Path(data_path)
+
+    if download:
+        download_missing(
+            "satrain",
+            base_sensor,
+            geometry,
+            split,
+            source="target",
+            subset=subset,
+            domain=domain,
+            destination=data_path,
+            progress_bar=True,
+        )
+
+    if not isinstance(input_data, list):
+        input_data = [input_data]
+    input_data = [inpt if isinstance(inpt, str) else inpt.name for inpt in input_data]
+
+    for inpt in input_data:
+        if download:
+            download_missing(
+                dataset_name,
+                base_sensor,
+                geometry,
+                split,
+                source=inpt,
+                subset=subset,
+                domain=domain,
+                destination=data_path,
+                progress_bar=True,
+            )
+
+    paths = get_local_files(
+        dataset_name="satrain",
+        base_sensor=base_sensor,
+        geometry=geometry,
+        split=split,
+        subset=subset,
+        domain=domain,
+        data_path=data_path
+    )
+    return paths
 
 
 

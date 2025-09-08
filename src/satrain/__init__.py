@@ -7,3 +7,5 @@ machine-learning datasets developed by the machine-learning working group
 of the International Precipitation Working Group (IPWG).
 """
 import hdf5plugin
+
+from .data import get_files

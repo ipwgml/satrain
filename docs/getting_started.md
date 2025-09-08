@@ -1,7 +1,7 @@
 # Getting started
 
 The easiest way to get started using the SatRain dataset is through the ``satrain`` Python package. While the full dataset can be
-manually downloaded from [here](https://rain.atmos.colostate.edu/satrain_2/satrain/), the ``satrain`` package provides functionality to automate the data download and the loading of the training and testing data.
+manually downloaded from [here](https://rain.atmos.colostate.edu/ipwgml/satrain/), the ``satrain`` package provides functionality to automate the data download and the loading of the training and testing data.
 
 
 ## Installing the ``satrain`` package
@@ -16,10 +16,20 @@ pip install satrain[complete]@git+https://github.com/satrain/satrain
 > **Note**: The above command installs all dependencies required to run the examples included here. If
 this is a concern, use ``pip install git+https://github.com/satrain/satrain`` for a minimal installation.
 
+You can then access the SatRain training data using the ``get_files`` function provided by the ``satrain`` package.
+```
+from satrain import get_files
+training_files = get_files(
+    base_sensor="gmi",
+    split="training",
+    input_data=["gmi", "ancillary"],
+    geometry="gridded"
+)
+```
 
 Installing the ``satrain`` package is all that is required to start using the package. If you just want to quickly test the dataset feel free to skip ahead to the neural net [examples](examples). Read on, to learn how to configure where the SatRain data is stored on your machine.
 
-## Optional: Data download using the ``satrain`` command
+## Optional: Manual data download using the ``satrain`` command
 
 ```{note}
 Most functionality of the ``satrain`` dataset that requires access to the SatRain dataset will automatically download the required files. Therefore, the following steps are not
@@ -46,7 +56,7 @@ This will download the gridded SatRain training, validation, and testing data. T
    
 ## Listing available files
 
- The ``iwpgml list`` command can be used to list the files on the local machine
+ The ``satrain list`` command can be used to list the files on the local machine
  that ``satrain`` is aware of. After a successful download, it should show a
  table listing relative locations of each dataset and how many files it
  comprises.
