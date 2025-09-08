@@ -16,7 +16,7 @@ development and evaluation across diverse retrieval scenarios.
 ---
 name: example_scene
 ---
-Satellite observations and reference precipitation estimates of the SatRain benchmark dataset. Panels (a), (b), and (c) show selected channels from the passive microwave (PMW), visible, and infrared observations that make up the input data of the SatRain dataset. Panel (d) shows the ground-radar-based precipitation reference used as training targets. All training samples are available in gridded format on a 0.036°-degree regular latitude-longitude grid and in on-swath format corresponding to the native sampling of the PMW observations. Black lines mark the sample training scenes displayed in Panel (e) and (f).
+Satellite observations and reference precipitation estimates of the SatRain benchmark dataset. Panels (a), (b), and (c) show selected channels from the passive microwave (PMW), visible, and infrared observations that make up the input data of the SatRain dataset. Panel (d) shows the ground-radar-based precipitation reference used as training targets. All training samples are available in gridded format on a 0.036° regular latitude-longitude grid and in on-swath format corresponding to the native sampling of the PMW observations. Black lines mark the sample training scenes displayed in Panel (e) and (f).
 ```
 
 ## Features
