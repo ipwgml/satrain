@@ -1,2 +1,2 @@
-.. automodule:: ipwgml.evaluation
+.. automodule:: satrain.evaluation
     :members:

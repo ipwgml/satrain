@@ -1,6 +1,6 @@
 # SatRain: A Benchmark Dataset for Machine-Learning–Based Satellite Rain Estimation and Detection
 
-The `ipwgml` Python package provides tools for accessing and working with
+The `satrain` Python package provides tools for accessing and working with
 **SatRain: A machine-learning benchmark dataset for satellite-based estimation
 and detection of rain**. SatRain was developed by the Machine Learning Working
 Group of the [International Precipitation Working
@@ -23,7 +23,7 @@ Satellite observations and reference precipitation estimates of the SatRain benc
 
 The key features of the SatRain dataset are:
 
-- **AI-ready dataset**: SatRain delivers collocated observations  paired with reference precipitation estimates. The ipwgml package includes ready-to-use PyTorch dataloaders for both image and tabular formats, along with cloud-enabled example notebooks demonstrating training and evaluation of fully connected and convolutional neural networks.
+- **AI-ready dataset**: SatRain delivers collocated observations  paired with reference precipitation estimates. The satrain package includes ready-to-use PyTorch dataloaders for both image and tabular formats, along with cloud-enabled example notebooks demonstrating training and evaluation of fully connected and convolutional neural networks.
 
 - **Flexible evaluation framework:** The package provides functionality for evaluating any precipitation retrieval against SatRain’s test data, enabling rapid development-evaluation cycles and direct comparison of machine-learning and conventional retrieval algorithms.
 

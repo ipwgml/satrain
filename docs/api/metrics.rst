@@ -1,2 +1,2 @@
-.. automodule:: ipwgml.metrics
+.. automodule:: satrain.metrics
     :members:

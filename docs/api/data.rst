@@ -1,2 +1,2 @@
-.. automodule:: ipwgml.data
+.. automodule:: satrain.data
     :members:

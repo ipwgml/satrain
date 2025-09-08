@@ -1,2 +1,2 @@
-.. automodule:: ipwgml.input
+.. automodule:: satrain.input
     :members:

@@ -1,13 +1,13 @@
 # Retrieval evaluation
 
-The ``ipwgml`` package provides a generic interface to evaluate precipitation
+The ``satrain`` package provides a generic interface to evaluate precipitation
 retrievals against the reference precipitation estimates in the SPR dataset. The
 evaluation is based on the test period of the SPR dataset, i.e., the year 2023,
-but is based on the full collocation scenes. While the evluation framework support retrieval operating on both on-swath and gridded geometries, the retrieval results are evaluated at the regular 0.036-degree latitude-longitude grided used by ``ipwgml``. This ensures that all retrievals are evaluated against the same reference data and avoid distortion of the retrieval accuracy that would occur if gridded and on-swath retrieval would be evaluated on their respective geometries.
+but is based on the full collocation scenes. While the evluation framework support retrieval operating on both on-swath and gridded geometries, the retrieval results are evaluated at the regular 0.036-degree latitude-longitude grided used by ``satrain``. This ensures that all retrievals are evaluated against the same reference data and avoid distortion of the retrieval accuracy that would occur if gridded and on-swath retrieval would be evaluated on their respective geometries.
 
-## The ``ipwgml.evaluation`` module
+## The ``satrain.evaluation`` module
 
-The functionality for evaluating precipitation retrieval is implemented by the ``ipwgml.evaluation.Evaluator`` class. To make the evaluator applicable to
+The functionality for evaluating precipitation retrieval is implemented by the ``satrain.evaluation.Evaluator`` class. To make the evaluator applicable to
 any retrieval, the interface to the retrieval algorithm or results to evaluate
 is implemented in the form of an opaque retrieval callback function ``retrieval_fn``.
 

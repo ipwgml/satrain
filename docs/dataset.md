@@ -106,5 +106,5 @@ Physically, the SatRain dataset is oganized following the hierarchy defined in t
 
 
 
-Note that the ``ipwgml`` package downloads data as required and local copies of the SatRain dataset may thus contain only a subset of the folders below.
+Note that the ``satrain`` package downloads data as required and local copies of the SatRain dataset may thus contain only a subset of the folders below.
 

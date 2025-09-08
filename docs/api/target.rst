@@ -1,2 +1,2 @@
-.. automodule:: ipwgml.target
+.. automodule:: satrain.target
     :members:

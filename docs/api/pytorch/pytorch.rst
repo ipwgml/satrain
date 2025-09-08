@@ -1,2 +1,2 @@
-.. automodule:: ipwgml.pytorch
+.. automodule:: satrain.pytorch
     :members:
