@@ -3,7 +3,7 @@ root: intro
 chapters:
 - file: getting_started
 - file: dataset
-- file: evaluation
+- file: notebooks/testing.ipynb
 - file: notebooks/input_and_target_data.ipynb
 - file: examples
   sections:

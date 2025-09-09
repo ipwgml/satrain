@@ -1,14 +1,30 @@
-# Overview and Organization
+# Dataset Overview
 
-The **Satellite-based Rain Estimation and Detection (SatRain) benchmark dataset** provides paired satellite observations and corresponding surface precipitation rate estimates derived from ground-based radar. It is designed to support the development and evaluation of machine-learning (ML) precipitation retrieval algorithms.
+The SatRain dataset provides paired satellite observations with corresponding
+surface precipitation rate estimates derived from ground-based radar and rain
+gauges. Training and validation sets are composed of fixed-size scenes and are
+available on two spatial grids: a 0.036° regular latitude–longitude grid
+(*gridded*) and the native sampling of the passive microwave sensors
+(*on-swath*).
 
-SatRain is built from collocations of passive microwave (PMW) sensor overpasses from the [Global Precipitation Measurement (GPM)](https://gpm.nasa.gov/) mission. These PMW observations are augmented with time-resolved visible and infrared measurements from [GOES-16](https://www.star.nesdis.noaa.gov/GOES/conus.php?sat=G16), the [CPC Merged-IR dataset](https://www.cpc.ncep.noaa.gov/products/global_precip/html/wpage.merged_IR.html), and a range of environmental **ancillary data**.
+Testing data is also provided in both gridded and on-swath formats, but instead
+of fixed-size scenes it consists of full overpass scenes of irregular extent.
 
----
+All training, validation, and testing data are stored in separate files for each
+input type (ATMS, GMI, Geo, Geo-IR, ancillary data, time-resolved Geo,
+time-resolved Geo-IR) and for the precipitation reference. File names follow the
+pattern ``<prefix>_YYYYmmddHHMMSS.nc``, where ``<prefix>`` identifies the data
+type (``gmi``, ``atms``, ``geo``, ``geo_t``, ``geo_ir``, ``geo_ir_t``,
+``ancillary``, ``target``) and ``YYYYmmddHHMMSS`` denotes the median scan time
+of the corresponding PMW observation. Files belonging to the same scene can be
+matched by their shared timestamp.
 
-## Data Organization
+## Organization
 
-SatRain is organized to balance **ease of use** with **flexibility** for a wide range of retrieval scenarios. The dataset hierarchy is defined along several dimensions (base sensor, split, subset, geometry, and data source) allowing users to access only the data needed for their use case. Th
+SatRain is organized to balance **ease of use** with **flexibility** for a wide
+range of retrieval scenarios. The dataset hierarchy is defined along several
+dimensions (base sensor, split, subset, geometry, and data source) allowing
+users to access only the data needed for their use case.
 
 ```{table} SatRain data organization
 :name: data_organization
@@ -28,10 +44,14 @@ SatRain is organized to balance **ease of use** with **flexibility** for a wide 
 The SatRain dataset comprises two independent sub-datasets: the first one
 generated from the GPM Microwave Imager (GMI) sensor, and the second one
 generated from overpasses of the Advanced Technology Microwave Sounder (ATMS).
-Since GMI and ATMS are different sensors with different viewing geometries and
-spectral sampling, and their overpasses at different times, these two subsets
-are treated as independent. The reference sensor constitutes the top level of
-the organization of the SatRain dataset.
+The GMI and ATMS-based subsets are completely independent subsets. The two
+sensors are included here to allow testing of algorithms on both a dedicated
+precipitation sensor (GMI) and a microwave sounding instrument not primarily
+designed for precipitation remote sensing (ATMS).
+
+Due to the larger swath width of ATMS, the gridded dataset is considerably
+larger. Users who wish to train retrievals based on geostationary sensors on as much
+data as possible, are therefore advised to use the ``atms`` subset.
 
 ### Gridded and on-swath geometries
 
@@ -54,9 +74,17 @@ Following machine-learning best practices, the SatRain dataset provides separate
 training, validation, and testing splits. The training and validation data are
 extracted from the collocations from 2018-2021 over CONUS. The validation data
 uses the collocations from each month's first five days, while the remaining
-days are assigned to the training data. The testing data is separated into data
-extracted over CONUS and two additional, independent testing datasets from
-Austria and Korea.
+days are assigned to the training data.
+
+The testing data is separated into data extracted over CONUS and two additional,
+independent testing datasets from Austria and Korea. As opposed to the training
+and validation data, the testing data is not split into fixed-size scenes. The
+testing data retains the structure of the original PMW overpasses to make it
+easy to compare SatRain retrievals against existing retrievals. To simplify evaluating
+retrieval on the testing data, the ``satrain.evaluation`` module provides functionality
+to tile and batch the input data from the testing data. See the documentation available
+[here](evaluation).
+
 
 ### Subsets
 
@@ -68,12 +96,58 @@ the folder hierarchy, the subsets should be understood cumulatively meaning
 that, for example, the 'xl' dataset includes all files in 'xs', 's', 'm', and
 'l' folder.
 
-### File Organization
+## File Structure
  
-
-
+ 
 #### Training and Validation Data
+The data is organzied into a folder structure following the hierarchy explained above. For the training data the folder structure looks as follows.
 
+```
+<satrain_data_path>
+└── satrain
+    └── <gmi/atms>
+        └── <training/validation>
+            ├── xs
+            │   ├── gridded
+            │   │   └── <year>/<month>/<day>/
+            │   └── on_swath
+            │       └── <year>/<month>/<day>/
+            ├── ...
+            ├── ...
+            └── xl
+                ├── gridded
+                │   └── <year>/<month>/<day>/
+                └── on_swath
+                    └── <year>/<month>/<day>/
+```
 
 #### Testing data
+
+For the testing data, the size-based subsets are replaced by the three domains: ``austria``, ``conus``, and ``korea``.
+
+```
+<satrain_data_path>
+    satrain
+    └── <gmi/atms>
+        └── testing
+            ├── austria
+            │   ├── gridded
+            │   │   └── <year>/<month>/<day>/
+            │   └── on_swath
+            │       └── <year>/<month>/<day>/
+            ├── conus
+            │   ├── gridded
+            │   │   └── <year>/<month>/<day>/
+            │   └── on_swath
+            │       └── <year>/<month>/<day>/
+            └── korea
+                ├── gridded
+                │   └── <year>/<month>/<day>/
+                └── on_swath
+                    └── <year>/<month>/<day>/
+```
+
+
+
+
 
