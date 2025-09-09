@@ -1,8 +1,8 @@
 """
-ipwgml.data
-===========
+satrain.data
+============
 
-Provides functionality to access IPWG ML datasets.
+Provides functionality to access and download the SatRain data.
 """
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -214,7 +214,7 @@ def download_files(
     if len(failed) > 0:
         LOGGER.warning(
             "The download of the following files failed: %s. If the issue persists please consider "
-            "submitting an issue at github.com/simonpf/ipwgml.",
+            "submitting an issue at github.com/ipwgml/satrain.",
             failed,
         )
 
@@ -269,13 +269,23 @@ def download_missing(
         all_files = all_files[base_sensor][split][subset][geometry].get(source, [])
 
     missing = set(all_files) - set(local_files)
-    downloaded = download_files(
-        get_data_url(dataset_name),
-        missing,
-        destination,
-        progress_bar=progress_bar
-    )
-    return [destination / fle for fle in downloaded]
+
+    if 0 < len(missing):
+        LOGGER.info(
+            "Downloading %s files for base_sensor %s, split %s, and geometry %s.",
+            len(missing),
+            base_sensor,
+            split,
+            geometry
+        )
+        downloaded = download_files(
+            get_data_url(dataset_name),
+            missing,
+            destination,
+            progress_bar=progress_bar
+        )
+        return [destination / fle for fle in downloaded]
+    return []
 
 
 def download_dataset(
@@ -467,7 +477,7 @@ def get_files(
     for inpt in input_data:
         if download:
             download_missing(
-                dataset_name,
+                "satrain",
                 base_sensor,
                 geometry,
                 split,
@@ -487,16 +497,16 @@ def get_files(
         domain=domain,
         data_path=data_path
     )
-    return paths
+    return {inpt: files for inpt, files in paths.items() if inpt in input_data + ["target"]}
 
 
 
 def list_local_files_rec(path: Path) -> Dict[str, Any]:
     """
-    Recursive listing of ipwgml data files.
+    Recursive listing of SatRain data files.
 
     Args:
-        path: A path pointing to a directory containing ipwgml files.
+        path: A path pointing to a directory containing SatRain files.
 
     Return:
         A dictionary containing all sub-directories
@@ -515,7 +525,7 @@ def list_local_files_rec(path: Path) -> Dict[str, Any]:
 
 def list_local_files() -> Dict[str, Any]:
     """
-    List available ipwgml files.
+    List available SatRain files.
     """
     data_path = config.get_data_path()
     files = list_local_files_rec(data_path / "satrain")
@@ -626,9 +636,9 @@ def cli(
     else:
         inputs = [inpt.strip() for inpt in inputs.split(",")]
         for inpt in inputs:
-            if inpt not in ALL_INPUTS:
+            if inpt not in ALL_INPUTS + ["target"]:
                 LOGGER.error(
-                    "The input '%s' is currently not supported. Currently supported inputs"
+                    f"The input 'inpt' is currently not supported. Currently supported inputs"
                     f" are {ALL_INPUTS}."
                 )
                 return 1
@@ -639,30 +649,34 @@ def cli(
     for sensor in base_sensors:
         for geometry in geometries:
             for inpt in inputs + ["target"]:
-                for split in splits:
 
-                    if split == "testing":
-                        domains = ["conus", "korea", "austria"]
-                    else:
-                        domains = [None]
+                if sensor == "gmi" and inpt == "atms":
+                    continue
+                if sensor == "atms" and inpt == "gmi":
+                    continue
 
-                    for domain in domains:
-                        try:
-                            download_missing(
-                                dataset_name=dataset,
-                                base_sensor=sensor,
-                                geometry=geometry,
-                                split=split,
-                                source=inpt,
-                                subset=subset,
-                                domain=domain,
-                                destination=data_path,
-                                progress_bar=True,
-                            )
-                        except Exception:
-                            LOGGER.exception(
-                                f"An  error was encountered when downloading dataset '{dataset}'."
-                            )
+                if split == "testing":
+                    domains = ["conus", "korea", "austria"]
+                else:
+                    domains = [None]
+
+                for domain in domains:
+                    try:
+                        download_missing(
+                            dataset_name=dataset,
+                            base_sensor=sensor,
+                            geometry=geometry,
+                            split=split,
+                            source=inpt,
+                            subset=subset,
+                            domain=domain,
+                            destination=data_path,
+                            progress_bar=True,
+                        )
+                    except Exception:
+                        LOGGER.exception(
+                            f"An  error was encountered when downloading dataset '{dataset}'."
+                        )
 
     config.set_data_path(data_path)
 

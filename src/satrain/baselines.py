@@ -1,6 +1,6 @@
 """
-ipwgml.baselines
-================
+satrain.baselines
+=================
 
 This module provides access to results from baseline retrievals.
 """

@@ -57,7 +57,7 @@ class SatRainTabular(Dataset):
         target_config: Optional[TargetConfig] = None,
         stack: bool = False,
         subsample: Optional[float] = None,
-        ipwgml_path: Optional[Path] = None,
+        data_path: Optional[Path] = None,
         download: bool = True,
     ):
         """
@@ -84,10 +84,10 @@ class SatRainTabular(Dataset):
         """
         super().__init__()
 
-        if ipwgml_path is None:
-            ipwgml_path = config.get_data_path()
+        if data_path is None:
+            data_path = config.get_data_path()
         else:
-            ipwgml_path = Path(ipwgml_path)
+            data_path = Path(data_path)
 
         if not base_sensor.lower() in ["gmi", "atms"]:
             raise ValueError("Base_Sensor must be one of ['gmi', 'atms'].")
@@ -136,7 +136,7 @@ class SatRainTabular(Dataset):
                     split=self.split,
                     subset=self.subset,
                     progress_bar=True,
-                    destination=ipwgml_path
+                    destination=data_path
                 )
         files = get_local_files(
             dataset_name="satrain",
@@ -144,12 +144,12 @@ class SatRainTabular(Dataset):
             geometry=self.geometry,
             split=self.split,
             subset=self.subset,
-            data_path=ipwgml_path,
+            data_path=data_path,
         )
         if len(files["target"]) == 0:
             raise ValueError(
                 f"Couldn't find any target data files. "
-                " Please make sure that the ipwgml data path is correct or "
+                " Please make sure that the satrain data path is correct or "
                 "set 'download' to True to download the file."
             )
         self._load_training_data(files)
@@ -322,7 +322,7 @@ class SatRainSpatial:
         target_config: TargetConfig = None,
         stack: bool = False,
         augment: bool = True,
-        ipwgml_path: Optional[Path] = None,
+        data_path: Optional[Path] = None,
         download: bool = True,
     ):
         """
@@ -347,10 +347,10 @@ class SatRainSpatial:
         """
         super().__init__()
 
-        if ipwgml_path is None:
-            ipwgml_path = config.get_data_path()
+        if data_path is None:
+            data_path = config.get_data_path()
         else:
-            ipwgml_path = Path(ipwgml_path)
+            data_path = Path(data_path)
 
         if not base_sensor.lower() in ["gmi", "atms"]:
             raise ValueError("Base_Sensor must be one of ['gmi', 'atms'].")
@@ -386,7 +386,7 @@ class SatRainSpatial:
         self.geo_ir = None
         self.ancillary = None
         self.target = None
-        self.ipwgml_path = ipwgml_path
+        self.data_path = data_path
 
         dataset = f"satrain/{self.base_sensor}/{self.split}/{self.geometry}/spatial/"
 
@@ -401,7 +401,7 @@ class SatRainSpatial:
                     split=self.split,
                     subset=self.subset,
                     progress_bar=True,
-                    destination=ipwgml_path
+                    destination=data_path
                 )
         files = get_local_files(
             dataset_name="satrain",
@@ -409,12 +409,12 @@ class SatRainSpatial:
             geometry=self.geometry,
             split=self.split,
             subset=self.subset,
-            data_path=ipwgml_path,
+            data_path=data_path,
         )
         if len(files["target"]) == 0:
             raise ValueError(
                 f"Couldn't find any target data files. "
-                " Please make sure that the ipwgml data path is correct or "
+                " Please make sure that the satrain data path is correct or "
                 "set 'download' to True to download the file."
             )
 
@@ -463,7 +463,7 @@ class SatRainSpatial:
             geometry=self.geometry,
             split=self.split,
             subset=self.subset,
-            data_path=self.ipwgml_path,
+            data_path=self.data_path,
         )
         return files[source]
 
@@ -478,7 +478,7 @@ class SatRainSpatial:
             geometry=self.geometry,
             split=self.split,
             subset=self.subset,
-            data_path=self.ipwgml_path,
+            data_path=self.data_path,
         )
         return files["target"]
 

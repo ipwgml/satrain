@@ -94,6 +94,6 @@ Data path: {current_data_path}
         file_cts[key] = file_cts.setdefault(key, 0) + n_files
 
     for rel_path, n_files in file_cts.items():
-        table.add_row(str(rel_path), str(n_files))
+        table.add_row("satrain/" + str(rel_path), str(n_files))
 
     rich.print(table)

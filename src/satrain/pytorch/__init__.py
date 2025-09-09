@@ -1,8 +1,8 @@
 """
-ipwgml.pytorch
-==============
+satrain.pytorch
+===============
 
-Provides functionality for using the SPR dataset with PyTorch.
+Provides functionality for using the SatRain dataset with PyTorch.
 """
 from typing import Any, Dict, List
 
@@ -19,7 +19,7 @@ class PytorchRetrieval:
     retrievals.
 
     The PytorchRetrieval wraps around a torch.nn.Module and extracts the input
-    data from the xarray.Dataset provided by the ipwgml.evaluation.Evaluator
+    data from the xarray.Dataset provided by the satrain.evaluation.Evaluator
     and feeds it into the module. It then transform the output back from
     PyTorch tensors to an xarray.Dataset containing the retrieval results.
 

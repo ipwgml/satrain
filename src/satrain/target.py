@@ -1,16 +1,16 @@
 """
-ipwgml.target
-=============
+satrain.target
+==============
 
-The ``ipwgml.target`` module provides the :class:`TargetConfig` class to configure
+The ``satrain.target`` module provides the :class:`TargetConfig` class to configure
 the loading of the retrieval reference data.
 
 Usage
 -----
 
-``TargetConfig`` objects can be passed to the :class:`ipwgml.evaluation.Evaluator` to configure
+``TargetConfig`` objects can be passed to the :class:`satrain.evaluation.Evaluator` to configure
 the MRMS pixels that are used in the evaluation of the retrieval. They can also be passed to
-the dataset classes defined in :module:`ipwgml.pytorch.datasets` to exclude low-quality pixels
+the dataset classes defined in :module:`satrain.pytorch.datasets` to exclude low-quality pixels
 from the training.
 
 Members
@@ -34,7 +34,7 @@ class TargetConfig:
     data loaded for training and evaluating precipitation retrievals.
 
     The loaded precipitation values that don't satisfy the quality requirements, will
-    be set to NAN. This will cause them to be ignored by the :class:`ipwgml.evaluation.Evaluator`.
+    be set to NAN. This will cause them to be ignored by the :class:`satrain.evaluation.Evaluator`.
     """
 
     target: str = "surface_precip"

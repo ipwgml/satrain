@@ -1,8 +1,8 @@
 """
-ipwgml.input
-============
+satrain.input
+=============
 
-The ``ipwgml.input`` module provides configuration classes to represent and
+The ``satrain.input`` module provides configuration classes to represent and
 configure the retrieval input data for the SPR dataset. The currently supported
 input datasets are GMI observations, ATMS observations, ancillary data,
 geostationary observations, and geostationary IR observations. These retrieval
@@ -14,7 +14,7 @@ Usage
 -----
 
 The above-named input config classes can be used everywhere that retrieval input
-data is specified, most notably in the :class:`ipwgml.evaluation.Evaluator`
+data is specified, most notably in the :class:`satrain.evaluation.Evaluator`
 and the dataset classes.
 
 Alternatively, the retrieval input datasets can be specified using strings. In
@@ -158,6 +158,8 @@ class InputConfig(ABC):
             return Geo(**kwargs)
         elif name.lower() == "seviri":
             return Seviri(**kwargs)
+        elif name.lower() == "seviri_t":
+            return SeviriT(**kwargs)
         elif name.lower() == "geo_t":
             return GeoT(**kwargs)
         elif name.lower() == "geo_ir":
@@ -597,6 +599,9 @@ class GeoIRT(InputConfig):
         """
         stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo_ir.nc"
         stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": self.time_steps}]
+        stats = xr.concat([stats for _ in range(len(self.time_steps))], dim="steps")
+        stats = stats.rename(features="features_single").stack(features=("steps", "features_single"))
+        stats = stats.reset_index("features")
         return stats
 
     def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
@@ -680,12 +685,10 @@ class GeoT(InputConfig):
         xarray.Dataset containing summary statistics for the input.
         """
         stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo.nc"
-        stats = xr.load_dataset(stats_file, engine="h5netcdf")
-        mask = np.zeros((4, 16), dtype=bool)
-        for time_ind in self.time_steps:
-            mask[time_ind, self.channels] = True
-        mask = mask.ravel()
-        stats = stats[{"features": mask}]
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": self.channels}]
+        stats = xr.concat([stats for _ in range(len(self.time_steps))], dim="steps")
+        stats = stats.rename(features="features_single").stack(features=("steps", "features_single"))
+        stats = stats.reset_index("features")
         return stats
 
     def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
@@ -768,11 +771,7 @@ class Geo(InputConfig):
         xarray.Dataset containing summary statistics for the input.
         """
         stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo.nc"
-        stats = xr.load_dataset(stats_file, engine="h5netcdf")
-        mask = np.zeros((4, 16), dtype=bool)
-        mask[3, self.channels] = True
-        mask = mask.ravel()
-        stats = stats[{"features": mask}]
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": self.channels}]
         return stats
 
     def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
@@ -816,7 +815,8 @@ class Seviri(InputConfig):
             self,
             channels: Optional[List[int]] = None,
             normalize: Optional[str] = None,
-            nan: Optional[float] = None
+            nan: Optional[float] = None,
+            remap_obs: Optional[bool] = False
     ):
         """
         Args:
@@ -825,6 +825,8 @@ class Seviri(InputConfig):
             normalize: An optional string specifying how to normalize the input data.
             nan: An optional float value that will be used to replace missing values
                 in the input data.
+            remap_obs: Boolean flag indicatin whether or not to remap the observations to match
+                the distribution of corresponding GOES channels.
         """
         self.all_goes_channels = [0, 1, 2, 4, 6, 7, 9, 10, 11, 13, 14, 15]
         if channels is None:
@@ -832,6 +834,7 @@ class Seviri(InputConfig):
         self._channels = np.array(channels)
         self.normalize = normalize
         self.nan = nan
+        self.remap_obs = remap_obs
 
     @property
     def name(self) -> str:
@@ -846,16 +849,18 @@ class Seviri(InputConfig):
         return [self.all_goes_channels[ind] for ind in self._channels]
 
     @cached_property
+    def lut(self) -> xr.Dataset:
+        lut_file = Path(__file__).parent / "files" / "stats" / "seviri_lut.nc"
+        lut = xr.load_dataset(lut_file, engine="h5netcdf")[{"channels": self.channels}]
+        return lut
+
+    @cached_property
     def stats(self) -> xr.Dataset:
         """
         xarray.Dataset containing summary statistics for the input.
         """
         stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo.nc"
-        stats = xr.load_dataset(stats_file, engine="h5netcdf")
-        mask = np.zeros((4, 16), dtype=bool)
-        mask[3, self.goes_channels] = True
-        mask = mask.ravel()
-        stats = stats[{"features": mask}]
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": self.goes_channels}]
         return stats
 
     def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
@@ -877,6 +882,118 @@ class Seviri(InputConfig):
             obs = geo_data.observations[{"channel": self.channels}].load()
             obs = obs.transpose("channel", ...).data.copy()
         del geo_data
+
+        if self.remap_obs:
+            lut = self.lut
+            for chan_ind in range(len(self.channels)):
+                obs_r = obs[chan_ind]
+                obs_r = np.interp(obs_r, lut.p_seviri.data[chan_ind], lut.p_goes.data[chan_ind])
+                obs[chan_ind] = obs_r
+
+        obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
+        return {"obs_geo": obs.copy()}
+
+    @property
+    def features(self) -> Dict[str, int]:
+        """
+        Dictionary mapping names of the input data variables loaded by the
+        Geo input class to the corresponding number of features.
+        """
+        n_chans = len(self.channels)
+        return {"obs_geo": n_chans}
+
+
+@dataclass
+class SeviriT(InputConfig):
+    """
+    Special instance of the Geo class load observations from the SEVIRI sensor of the 'austria' domain.
+    """
+    def __init__(
+            self,
+            channels: Optional[List[int]] = None,
+            time_steps: Optional[List[int]] = None,
+            normalize: Optional[str] = None,
+            nan: Optional[float] = None,
+            remap_obs: Optional[bool] = False,
+    ):
+        """
+        Args:
+            channels: Optional list of zero-based indices identifying the GOES channels
+                to load.
+            normalize: An optional string specifying how to normalize the input data.
+            nan: An optional float value that will be used to replace missing values
+                in the input data.
+            remap_obs: Boolean flag indicatin whether or not to remap the observations to match
+                the distribution of corresponding GOES channels.
+        """
+        self.all_goes_channels = [0, 1, 2, 4, 6, 7, 9, 10, 11, 13, 14, 15]
+        if channels is None:
+            channels = list(range(12))
+        self._channels = np.array(channels)
+        if time_steps is None:
+            time_steps = list(range(7))
+        self.time_steps = time_steps
+        self.normalize = normalize
+        self.nan = nan
+        self.remap_obs = remap_obs
+
+    @property
+    def name(self) -> str:
+        return "geo_t"
+
+    @cached_property
+    def channels(self):
+        return self._channels
+
+    @cached_property
+    def goes_channels(self):
+        return [self.all_goes_channels[ind] for ind in self._channels]
+
+    @cached_property
+    def lut(self) -> xr.Dataset:
+        lut_file = Path(__file__).parent / "files" / "stats" / "seviri_lut.nc"
+        lut = xr.load_dataset(lut_file, engine="h5netcdf")[{"channels": self.channels}]
+        return lut
+
+    @cached_property
+    def stats(self) -> xr.Dataset:
+        """
+        xarray.Dataset containing summary statistics for the input.
+        """
+        stats_file = Path(__file__).parent / "files" / "stats" / "obs_geo.nc"
+        stats = xr.load_dataset(stats_file, engine="h5netcdf")[{"features": self.goes_channels}]
+        stats = xr.concat([stats for _ in range(len(self.time_steps))], dim="steps")
+        stats = stats.rename(features="features_single").stack(features=("steps", "features_single"))
+        stats = stats.reset_index("features")
+        return stats
+
+    def load_data(self, geo_data_file: Path, target_time: xr.DataArray) -> xr.Dataset:
+        """
+        Load GEO data from NetCDF file.
+
+        Args:
+            geo_data_file: A Path object pointing to the file from which to load the input data.
+            target_time: An xarray.DataArray containing the target times, which will be used to
+                to interpolate the input observations to the nearest time step if 'self.nearest'
+                is 'True'.
+
+        Return:
+            A dicitonary mapping the single key 'obs_geo' to an array containing the GEO
+            observation from the desired time steps. The returned array will have the
+            time and channel dimensions along the leading axes of the array.
+        """
+        with open_if_required(geo_data_file) as geo_data:
+            obs = geo_data.observations[{"time": self.time_steps, "channel": self.channels}].load()
+            obs = obs.transpose("time", "channel", ...).data.copy()
+        del geo_data
+
+        if self.remap_obs:
+            lut = self.lut
+            for chan_ind in range(len(self.channels)):
+                obs_r = obs[:, chan_ind]
+                obs_r = np.interp(obs_r, lut.p_seviri.data[chan_ind], lut.p_goes.data[chan_ind])
+                obs[:, chan_ind] = obs_r
+        obs = obs.reshape((-1,) + obs.shape[-2:])
         obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
         return {"obs_geo": obs.copy()}
 

@@ -163,7 +163,7 @@ def download_blue_marble(texture_file: Path) -> Path:
         url: String specifying the URL of the texture file.
         texture_file: Path object pointing to the file to which to download the texture image.
     """
-    url = "https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73751/world.topo.bathy.200407.3x21600x21600.D1.png"
+    url = "https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73751/world.topo.bathy.200407.3x21600x10800.jpg"
     if not texture_file.exists():
         urllib.request.urlretrieve(url, texture_file)
     return texture_file

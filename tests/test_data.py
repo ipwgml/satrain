@@ -9,6 +9,7 @@ from satrain.data import (
     enable_testing,
     get_files_in_dataset,
     get_local_files,
+    get_files,
     load_tabular_data
 )
 
@@ -33,6 +34,19 @@ def test_download_files_satrain_gmi_gridded_train(request, sensor_and_fixture):
     for source in [sensor, "ancillary", "geo_ir", "target"]:
         files = get_local_files("satrain", sensor, "gridded", "training", data_path=data_path)
         assert len(files) == 7
+
+@pytest.mark.parametrize("sensor_and_fixture", [["gmi", "satrain_gmi_gridded_train"], ["atms", "satrain_atms_gridded_train"]])
+def test_get_files(request, sensor_and_fixture):
+    """
+    Ensure the get_files function returns locally available files.
+    """
+    sensor, fixture = sensor_and_fixture
+    data_path = request.getfixturevalue(fixture)
+    for source in [sensor, "ancillary", "geo_ir", "target"]:
+        files = get_files(sensor, "training", input_data=[sensor, "ancillary"], geometry="gridded", data_path=data_path)
+        assert sensor in files
+        assert "target" in files
+        assert len(files) == 3
 
 @pytest.mark.parametrize("sensor_and_fixture", [["gmi", "satrain_gmi_on_swath_train"], ["atms", "satrain_atms_on_swath_train"]])
 def test_download_files_satrain_gmi_on_swath_train(request, sensor_and_fixture):

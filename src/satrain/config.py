@@ -62,10 +62,23 @@ def get_data_path() -> Path:
             )
         else:
             data_path = Path(new_data_path)
+    else:
+        if "SATRAIN_DATA_PATH" not in os.environ:
+            LOGGER.warning(
+                "Initializing the SATRAIN_DATA_PATH to %s. Use 'satrain config set_data_path' "
+                " to customize the location of the SatRain data.",
+                data_path
+            )
+            set_data_path(data_path)
 
     # Finally, check if environment variable is set.
     new_data_path = os.environ.get("SATRAIN_DATA_PATH", None)
     if new_data_path is not None:
+        if Path(new_data_path) != data_path:
+            LOGGER.warning(
+                "Environment variable SATRAIN_DATA_PATH"
+            )
+
         data_path = Path(new_data_path)
 
     return data_path
@@ -98,14 +111,14 @@ def show() -> None:
 
     satrain_data_path = os.environ.get("SATRAIN_DATA_PATH")
     if satrain_data_path is None:
-        satrain_data_path = "None"
+        satrain_data_path = "NOT SET"
 
     rich.print(
         f"""
 [bold red]satrain config [/bold red]
 
 Current data path: [bold red]{current_data_path}[/bold red]
-Config file:       {config_file}
-SATRAIN_DATA_PATH: {satrain_data_path}
+Config file: {config_file}
+Environment variable SATRAIN_DATA_PATH: {satrain_data_path}
         """
     )

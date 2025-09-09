@@ -1,8 +1,8 @@
 """
-ipwgml.evaluation
-=================
+satrain.evaluation
+==================
 
-Evaluation functionality for the ipwgml SatRain dataset.
+Evaluation functionality for the IPWGML SatRain dataset.
 
 This module provides the ``Evaluator`` class that implements a generic
 retrieval evaluator based on the test data split of the IPWG SatRain dataset.
@@ -28,7 +28,7 @@ from datetime import datetime
 import logging
 from math import trunc, ceil
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import h5netcdf
 import numpy as np
@@ -691,7 +691,7 @@ class Evaluator:
         retrieval_input: Optional[List[str | Dict[str, Any | InputConfig]]] = None,
         domain: str = "conus",
         target_config=None,
-        ipwgml_path: Optional[Path] = None,
+        data_path: Optional[Path] = None,
         download: bool = True,
     ):
         """
@@ -703,14 +703,14 @@ class Evaluator:
             retrieval_input: The retrieval inputs to load. Should be a subset of
                 ['gmi', 'mhs', 'ancillary', 'geo', 'geo_ir']
             domain: The domain over which to evaluate the retrieval.
-            ipwgml_path: An optional path to the location of the ipgml data.
+            data_path: An optional path to the location of the ipgml data.
             download: A boolean flag indicating whether or not to download the evaluation files
-                 if they are not found in 'ipwgml_path'.
+                 if they are not found in 'data_path'.
         """
-        if ipwgml_path is None:
-            ipwgml_path = config.get_data_path()
+        if data_path is None:
+            data_path = config.get_data_path()
         else:
-            ipwgml_path = Path(ipwgml_path)
+            data_path = Path(data_path)
 
         if domain not in DOMAINS:
             raise ValueError(
@@ -729,7 +729,7 @@ class Evaluator:
             target_config = TargetConfig()
         self.target_config = target_config
 
-        self.ipwgml_path = ipwgml_path
+        self.data_path = data_path
 
         self._precip_quantification_metrics = [
             satrain.metrics.Bias(),
@@ -762,7 +762,7 @@ class Evaluator:
                     split="testing",
                     source=source,
                     domain=self.domain,
-                    destination=ipwgml_path,
+                    destination=data_path,
                     progress_bar=True
                 )
         files = get_local_files(
@@ -771,7 +771,7 @@ class Evaluator:
             geometry=self.geometry,
             split="testing",
             domain=self.domain,
-            data_path=ipwgml_path
+            data_path=data_path
         )
         for name, source_files in files.items():
             if len(source_files) > 0:
@@ -786,7 +786,7 @@ class Evaluator:
                     split="testing",
                     source="target",
                     domain=self.domain,
-                    destination=ipwgml_path,
+                    destination=data_path,
                     progress_bar=True
                 )
             files = get_local_files(
@@ -795,7 +795,7 @@ class Evaluator:
                 geometry=geometry,
                 split="testing",
                 domain=self.domain,
-                data_path=ipwgml_path
+                data_path=data_path
             )
             setattr(self, "target_" + geometry, files["target"])
 
@@ -933,7 +933,7 @@ class Evaluator:
     def __repr__(self):
         return (
             f"Evaluator(base_sensor='{self.base_sensor}', geometry='{self.geometry}', "
-            f"ipwgml_path='{self.ipwgml_path}')"
+            f"data_path='{self.data_path}')"
         )
 
     def __len__(self) -> int:
@@ -982,15 +982,26 @@ class Evaluator:
             self.geo_ir_t_on_swath[index] if hasattr(self, "geo_ir_t_on_swath") else None,
         )
 
-    def get_input_data(self, scene_index: int) -> xr.Dataset:
+    def get_input_data_spatial(
+            self,
+            scene_index: int,
+            tile_size: Optional[Union[int, Tuple[int, int]]] = None,
+            overlap: Optional[int] = None,
+            batch_size: Optional[int] = 1
+    ) -> xr.Dataset:
         """
         Get retrieval input data for a given scene.
 
         Args:
             scene_index: An integer specifying the scene for which to load the input data.
+            tile_size: Optional int or tuple of ints specifying the height and width of the tiling
+                to apply to the input data.
+            overlap: The width of the overlap between neighboring tiles. Defaults to a fourth of the
+                tile size if not given.
+            batch_size: Set to number larger than one to return batches of multiple tiles.
 
         Return:
-            An xarray.Dataset containing the retrieval input data.
+            An xarray.Dataset containing the input data or an iterator over the input data tiles.
         """
         input_files = self.get_input_files(scene_index)
         input_data = load_retrieval_input_data(
@@ -998,7 +1009,153 @@ class Evaluator:
             retrieval_input=self.retrieval_input,
             geometry=self.geometry,
         )
-        return input_data
+        if tile_size is None:
+            return input_data
+
+        if isinstance(tile_size, int):
+            tile_size = (tile_size,) * 2
+        elif isinstance(tile_size, tuple):
+            pass
+        else:
+            raise ValueError(
+                "If provided, 'tile_size' should be an int or tuple of ints."
+            )
+            tile_size = (int(tile_size,)) * 2
+
+        if overlap is None:
+            overlap = tile_size[0] // 4
+
+        spatial_dims = ["latitude", "longitude"]
+        if self.geometry == "on_swath":
+            spatial_dims = ["scan", "pixels"]
+
+        input_data_tiler = DatasetTiler(
+            input_data, tile_size=tile_size, overlap=overlap, spatial_dims=spatial_dims
+        )
+
+        if batch_size is None:
+            batched = False
+            batch_size = 1
+        else:
+            batched = True
+
+        batch_stack = []
+        for row_ind in range(input_data_tiler.n_rows_tiled):
+            for col_ind in range(input_data_tiler.n_cols_tiled):
+                input_tile = input_data_tiler.get_tile(row_ind, col_ind)
+                batch_stack.append(input_tile.reset_index(("latitude", "longitude")))
+
+                while len(batch_stack) >= batch_size:
+                    batch = batch_stack[:batch_size]
+                    batch_stack = batch_stack[batch_size:]
+                    if batched:
+                        assert len(batch) == batch_size
+                        yield xr.concat(batch, dim="batch")
+                    else:
+                        assert len(batch) == 1
+                        yield batch[0]
+
+        # Process remaining tiles.
+        if len(batch_stack) > 0:
+            yield xr.concat(batch_stack, dim="batch")
+
+    def get_input_data_tabular(
+            self,
+            scene_index: int,
+            batch_size: Optional[int] = None,
+    ):
+        """
+        Get retrieval input data in for a given scene in tabular format.
+
+        Args:
+            scene_index: An integer specifying the scene for which to load the input data.
+            batch_size: Optional batch size to use to batch the input data.
+
+        Return:
+            An xarray.Dataset containing the retrieval input data or an iterator over the batched
+            input data.
+        """
+        input_files = self.get_input_files(scene_index)
+        input_data = load_retrieval_input_data(
+            input_files=input_files,
+            retrieval_input=self.retrieval_input,
+            geometry=self.geometry,
+        )
+        spatial_dims = ["latitude", "longitude", "scan", "pixel"]
+        spatial_dims = [dim for dim in spatial_dims if dim in input_data.dims]
+        input_data_flat = input_data.stack({"batch": spatial_dims}).copy(deep=True)
+        if batch_size is None:
+            return input_data_flat
+
+        n_samples = input_data_flat.batch.size
+        batch_start = 0
+        while batch_start < n_samples:
+            inds = {"batch": slice(batch_start, batch_start + batch_size)}
+            batch = input_data_flat[inds]
+            yield batch
+
+    def get_input_data(
+            self,
+            scene_index: int,
+            format: str = "spatial",
+            batch_size: Optional[int] = None,
+            tile_size: Optional[Tuple[int, int]] = None,
+            overlap: Optional[int] = None,
+    ) -> xr.Dataset:
+        """
+        Get retrieval input data for a given scene.
+
+        Args:
+            scene_index: An integer specifying the scene for which to load the input data.
+            format: The format in which to load the data. 'spatial' will load the data in the original
+                2D format of the spatial scenes. 'tabular' will load the data as a flattened sequence
+                of pixels.
+            batch_size: If format is 'tabular' or the data is tiled, the batch size can be used to
+                load data in batches.
+            tile_size: An optional tile size to use to tile the data input fixed-size tiles.
+            overlap: An optional overlap to apply between neighboring tiles to avoid artifacts in the
+                results.
+
+        Return:
+            An xarray.Dataset containing the retrieval input data.
+        """
+        input_files = self.get_input_files(scene_index)
+        if format == "spatial":
+            if tile_size is None:
+                input_files = self.get_input_files(scene_index)
+                input_data = load_retrieval_input_data(
+                    input_files=input_files,
+                    retrieval_input=self.retrieval_input,
+                    geometry=self.geometry,
+                )
+                return input_data
+            else:
+                return self.get_input_data_spatial(
+                    scene_index,
+                    batch_size=batch_size,
+                    tile_size=tile_size,
+                    overlap=overlap
+                )
+        elif format == "tabular":
+            if batch_size is None:
+                input_files = self.get_input_files(scene_index)
+                input_data = load_retrieval_input_data(
+                    input_files=input_files,
+                    retrieval_input=self.retrieval_input,
+                    geometry=self.geometry,
+                )
+                spatial_dims = ["latitude", "longitude", "scan", "pixel"]
+                spatial_dims = [dim for dim in spatial_dims if dim in input_data.dims]
+                input_data_flat = input_data.stack({"batch": spatial_dims})
+                return input_data_flat
+            return self.get_input_data_tabular(
+                scene_index,
+                batch_size=batch_size
+            )
+        raise ValueError(
+            "'format' should be one of ['spatial', 'tabular']."
+        )
+
 
     def evaluate_scene(
         self,
@@ -1251,9 +1408,20 @@ class Evaluator:
         valid_lats = np.isfinite(sp_ref).any(1)
         lat_min = lats[valid_lats].min()
         lat_max = lats[valid_lats].max()
+
+        margin = None
+        if margin is not None:
+            d_lat = lat_max - lat_min
+            lat_min = lat_min - 0.5 * margin * d_lat
+            lat_max = lat_max + margin * d_lat
+
         valid_lons = np.isfinite(sp_ref).any(0)
         lon_min = lons[valid_lons].min()
         lon_max = lons[valid_lons].max()
+        if margin is not None:
+            d_lon = lon_max - lon_min
+            lon_min = lon_min - 0.5 * margin * d_lon
+            lon_max = lon_max + margin * d_lon
 
         lon_ticks = np.arange(
             trunc(lons.min() // 5) * 5.0, ceil(lons.max() // 5) * 5 + 1.0, 5.0
@@ -1286,7 +1454,7 @@ class Evaluator:
             norm=norm,
         )
         cntr = ax.contour(
-            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidth=0.5
+            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidths=0.5
         )
         ax.set_title("(a) Reference", loc="left")
         add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
@@ -1296,7 +1464,9 @@ class Evaluator:
         ax.set_xlim(lon_min, lon_max)
         ax.set_ylim(lat_min, lat_max)
 
-        if lon_max - lon_min < 2.0:
+        if lon_max - lon_min < 1.0:
+            sb_len = 10e3
+        elif lon_max - lon_min < 2.0:
             sb_len = 50e3
         elif lon_max - lon_min < 5.0:
             sb_len = 100e3
@@ -1319,7 +1489,7 @@ class Evaluator:
             sp_ret = res.surface_precip.data
             ax.pcolormesh(lons, lats, np.maximum(sp_ret, 1e-3), cmap=cmap_precip, norm=norm)
             ax.contour(
-                lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey"
+                lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidths=0.5
             )
             ax.set_title(f"({chr(ord('b') + ind)}) {name}", loc="left")
             add_ticks(ax, lon_ticks, lat_ticks, left=col_ind == 0, bottom=row_ind == n_rows - 1)

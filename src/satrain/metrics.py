@@ -1,6 +1,6 @@
 """
-ipwgml.metrics
-==============
+satrain.metrics
+===============
 
 Defines the metrics used to evaluate precipitation retrievals.
 
@@ -16,7 +16,7 @@ Usage
 -----
 
 While the metric classes defined here can, in principle, be used on their own,
-their intended use is with the :class:`ipwgml.evaluation.Evaluator` class, which
+their intended use is with the :class:`satrain.evaluation.Evaluator` class, which
 holds the metrics to track in its ``precip_quantification_metrics``,
 ``precip_detection_metrics``, ``prob_precip_detection_metrics``,
 ``heavy_precip_detection_metrics``, and ``prob_heavy_precip_detection_metrics``.
@@ -195,7 +195,7 @@ class ValidFraction(QuantificationMetric):
 
 
 class Bias(QuantificationMetric):
-    """
+    r"""
     The bias, or mean error, calculated as the mean value of the difference between
     prediction and target values:
 
@@ -256,7 +256,7 @@ class Bias(QuantificationMetric):
 
         bias = xr.Dataset({"bias": bias[0]})
         bias.bias.attrs["full_name"] = "Bias"
-        bias.bias.attrs["unit"] = "\%" if self.relative else "mm h^{-1}"
+        bias.bias.attrs["unit"] = r"\%" if self.relative else "mm h^{-1}"
         return bias
 
 
@@ -313,7 +313,7 @@ class MAE(QuantificationMetric):
 
 
 class SMAPE(QuantificationMetric):
-    """
+    r"""
     The symmetric mean absolute percentage error (SMAPE) with threshold :math:`t`.
 
     .. math::
@@ -372,12 +372,12 @@ class SMAPE(QuantificationMetric):
         with np.errstate(invalid='ignore'):
             smape = xr.Dataset({"smape": 100.0 * (self.tot_rel_error / self.counts)[0]})
         smape.smape.attrs["full_name"] = f"SMAPE$_{{{self.threshold:.2}}}$"
-        smape.smape.attrs["unit"] = "\%"
+        smape.smape.attrs["unit"] = r"\%"
         return smape
 
 
 class MSE(QuantificationMetric):
-    """
+    r"""
     The mean-squared error calculated as the mean value of the squared difference between
     prediction and target values:
 
@@ -430,7 +430,7 @@ class MSE(QuantificationMetric):
 
 
 class CorrelationCoef(QuantificationMetric):
-    """
+    r"""
     The linear correlation coefficient between predictions and target values.
 
     .. math::
@@ -929,7 +929,7 @@ class HSS(DetectionMetric):
 
 
 class PRCurve(ProbabilisticDetectionMetric):
-    """
+    r"""
     Calculates the precision recall curve for probabilistic detection results. The precision recall
     curve is a probabilistic detection metrics and thus expects predictions to be probabilities
     normalized to lie within :math:`[0, 1]`. If the probabilities are not normalized the ``range``

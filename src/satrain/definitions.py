@@ -1,8 +1,8 @@
 """
-ipwgml.definitions
-==================
+satrain.definitions
+===================
 
-This module defines shared attributes for the ipwgml package.
+This module defines shared attributes for the satrain package.
 """
 
 ANCILLARY_VARIABLES = [
@@ -32,7 +32,7 @@ N_CLASSES = {
 }
 
 
-ALL_INPUTS = ["gmi", "geo", "geo_ir", "ancillary"]
+ALL_INPUTS = ["gmi", "geo", "geo_ir", "ancillary", "geo_t", "geo_ir_t"]
 
 BASE_SENSORS = ["gmi", "atms"]
 GEOMETRIES = ["gridded", "on_swath"]

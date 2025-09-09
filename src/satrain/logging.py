@@ -1,8 +1,8 @@
 """
-ipwgml.logging
-==============
+satrain.logging
+===============
 
-Configures the logging for the ipwgml package.
+Configures the logging for the satrain package.
 """
 import logging
 
@@ -11,11 +11,20 @@ from rich.console import Console
 
 _LOG_LEVEL = "INFO"
 _CONSOLE = Console()
-_HANDLER = RichHandler(console=_CONSOLE)
+_HANDLER = RichHandler(
+    console=_CONSOLE,
+    show_time=False,
+    show_path=False
+)
 
 # The parent logger for the module.
-LOGGER = logging.getLogger("ipwgml")
-logging.basicConfig(level=_LOG_LEVEL, force=True, handlers=[_HANDLER])
+LOGGER = logging.getLogger("satrain")
+logging.basicConfig(
+    level=_LOG_LEVEL,
+    force=True,
+    format="%(message)s",
+    handlers=[_HANDLER]
+)
 
 def get_console():
     """
