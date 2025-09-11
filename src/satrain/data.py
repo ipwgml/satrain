@@ -500,6 +500,97 @@ def get_files(
     return {inpt: files for inpt, files in paths.items() if inpt in input_data + ["target"]}
 
 
+def load_tabular_data(
+        dataset_name: str,
+        base_sensor: str,
+        geometry: str,
+        split: str,
+        subset: str,
+        retrieval_input: List[str | Dict[str, Any] | "InputConfig"],
+        target_config: Optional["TargetConfig"] = None,
+        data_path: Optional[Path] = None
+):
+    """
+    Load data in tabular format.
+
+    Args:
+        dataset_name: The name of the dataset.
+        base_sensor: The base sensor.
+        geometry: The geometry, i.e., 'on_swath' or 'gridded'.
+        split: Training or validation.
+        subset: The subset: 'xs', 's', 'm', 'l', 'xl'
+        retrieval_input: A list specifying the retrieval input.
+        target_config: A config dict or object defining the target data configuration.
+        data_path: Optional path pointing to the local data path.
+
+    Return:
+        A tuple ``input_data, target`` with ``input_data`` being a dictionary containing
+        the retrieval input as separate xarray.Datasets and ``target`` containing the target
+        data.
+    """
+    from .input import parse_retrieval_inputs
+    from .target import TargetConfig
+
+    if not base_sensor.lower() in ["gmi", "atms"]:
+        raise ValueError("Base_Sensor must be one of ['gmi', 'atms'].")
+    base_sensor = base_sensor.lower()
+
+    if not geometry.lower() in ["gridded", "on_swath"]:
+        raise ValueError("Geomtry must be one of ['gridded', 'on_swath'].")
+    geometry = geometry.lower()
+
+    if not split.lower() in ["training", "validation", "testing"]:
+        raise ValueError(
+            "Split must be one of ['training', 'validation', 'testing']"
+        )
+
+    retrieval_input = parse_retrieval_inputs(retrieval_input)
+    if target_config is None:
+        target_config = TargetConfig()
+    if isinstance(target_config, dict):
+        target_config = TargetConfig(**target_config)
+
+    files = download_dataset(
+        dataset_name, base_sensor, retrieval_input, split, geometry, subset=subset, data_path=data_path
+    )
+
+    target_files = files["target"]
+
+    target_data = []
+    input_data = {inpt.name: [] for inpt in retrieval_input}
+
+    from tqdm import tqdm
+    for ind, target_file in tqdm(enumerate(target_files), total=len(target_files)):
+        data = xr.load_dataset(target_file)
+        valid = ~target_config.get_mask(data)
+        valid = xr.DataArray(
+            data=valid,
+            dims=data.surface_precip.dims
+        )
+        data = extract_samples(data, valid)
+        if "time" in data.coords:
+            data = data.reset_index("time")
+        target_data.append(data)
+
+        ref_time = get_median_time(target_file)
+
+        for inpt in retrieval_input:
+            input_time = get_median_time(files[inpt.name][ind])
+            if ref_time != input_time:
+                raise ValueError(
+                    "Encountered an input files %s that is inconsistent with the corresponding "
+                    "reference file %s. This indicates that the dataset has not been downloaded "
+                    "properly."
+                )
+            data = extract_samples(xr.load_dataset(files[inpt.name][ind]), valid)
+            if "time" in data.coords:
+                data = data.reset_index("time")
+            input_data[inpt.name].append(data)
+
+    target_data = xr.concat(target_data, dim="samples")
+    input_data = {name: xr.concat(data, dim="samples") for name, data in input_data.items()}
+    return input_data, target_data
+
 
 def list_local_files_rec(path: Path) -> Dict[str, Any]:
     """
@@ -649,125 +740,34 @@ def cli(
     for sensor in base_sensors:
         for geometry in geometries:
             for inpt in inputs + ["target"]:
+                for split in splits:
+                    if sensor == "gmi" and inpt == "atms":
+                        continue
+                    if sensor == "atms" and inpt == "gmi":
+                        continue
 
-                if sensor == "gmi" and inpt == "atms":
-                    continue
-                if sensor == "atms" and inpt == "gmi":
-                    continue
+                    if split == "testing":
+                        domains = ["conus", "korea", "austria"]
+                    else:
+                        domains = [None]
 
-                if split == "testing":
-                    domains = ["conus", "korea", "austria"]
-                else:
-                    domains = [None]
-
-                for domain in domains:
-                    try:
-                        download_missing(
-                            dataset_name=dataset,
-                            base_sensor=sensor,
-                            geometry=geometry,
-                            split=split,
-                            source=inpt,
-                            subset=subset,
-                            domain=domain,
-                            destination=data_path,
-                            progress_bar=True,
-                        )
-                    except Exception:
-                        LOGGER.exception(
-                            f"An  error was encountered when downloading dataset '{dataset}'."
-                        )
+                    for domain in domains:
+                        try:
+                            download_missing(
+                                dataset_name=dataset,
+                                base_sensor=sensor,
+                                geometry=geometry,
+                                split=split,
+                                source=inpt,
+                                subset=subset,
+                                domain=domain,
+                                destination=data_path,
+                                progress_bar=True,
+                            )
+                        except Exception:
+                            LOGGER.exception(
+                                f"An  error was encountered when downloading dataset '{dataset}'."
+                            )
 
     config.set_data_path(data_path)
 
-
-def load_tabular_data(
-        dataset_name: str,
-        base_sensor: str,
-        geometry: str,
-        split: str,
-        subset: str,
-        retrieval_input: List[str | Dict[str, Any] | "InputConfig"],
-        target_config: Optional["TargetConfig"] = None,
-        data_path: Optional[Path] = None
-):
-    """
-    Load data in tabular format.
-
-    Args:
-        dataset_name: The name of the dataset.
-        base_sensor: The base sensor.
-        geometry: The geometry, i.e., 'on_swath' or 'gridded'.
-        split: Training or validation.
-        subset: The subset: 'xs', 's', 'm', 'l', 'xl'
-        retrieval_input: A list specifying the retrieval input.
-        target_config: A config dict or object defining the target data configuration.
-        data_path: Optional path pointing to the local data path.
-
-    Return:
-        A tuple ``input_data, target`` with ``input_data`` being a dictionary containing
-        the retrieval input as separate xarray.Datasets and ``target`` containing the target
-        data.
-    """
-    from .input import parse_retrieval_inputs
-    from .target import TargetConfig
-
-    if not base_sensor.lower() in ["gmi", "atms"]:
-        raise ValueError("Base_Sensor must be one of ['gmi', 'atms'].")
-    base_sensor = base_sensor.lower()
-
-    if not geometry.lower() in ["gridded", "on_swath"]:
-        raise ValueError("Geomtry must be one of ['gridded', 'on_swath'].")
-    geometry = geometry.lower()
-
-    if not split.lower() in ["training", "validation", "testing"]:
-        raise ValueError(
-            "Split must be one of ['training', 'validation', 'testing']"
-        )
-
-    retrieval_input = parse_retrieval_inputs(retrieval_input)
-    if target_config is None:
-        target_config = TargetConfig()
-    if isinstance(target_config, dict):
-        target_config = TargetConfig(**target_config)
-
-    files = download_dataset(
-        dataset_name, base_sensor, retrieval_input, split, geometry, subset=subset, data_path=data_path
-    )
-
-    target_files = files["target"]
-
-    target_data = []
-    input_data = {inpt.name: [] for inpt in retrieval_input}
-
-    from tqdm import tqdm
-    for ind, target_file in tqdm(enumerate(target_files), total=len(target_files)):
-        data = xr.load_dataset(target_file)
-        valid = ~target_config.get_mask(data)
-        valid = xr.DataArray(
-            data=valid,
-            dims=data.surface_precip.dims
-        )
-        data = extract_samples(data, valid)
-        if "time" in data.coords:
-            data = data.reset_index("time")
-        target_data.append(data)
-
-        ref_time = get_median_time(target_file)
-
-        for inpt in retrieval_input:
-            input_time = get_median_time(files[inpt.name][ind])
-            if ref_time != input_time:
-                raise ValueError(
-                    "Encountered an input files %s that is inconsistent with the corresponding "
-                    "reference file %s. This indicates that the dataset has not been downloaded "
-                    "properly."
-                )
-            data = extract_samples(xr.load_dataset(files[inpt.name][ind]), valid)
-            if "time" in data.coords:
-                data = data.reset_index("time")
-            input_data[inpt.name].append(data)
-
-    target_data = xr.concat(target_data, dim="samples")
-    input_data = {name: xr.concat(data, dim="samples") for name, data in input_data.items()}
-    return input_data, target_data
