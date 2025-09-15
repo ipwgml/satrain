@@ -28,11 +28,11 @@ def open_if_required(path_or_dataset: str | Path | xr.Dataset) -> xr.Dataset:
          An xarray.Dataset providing access to the loaded data.
     """
     try:
+        handle = None
         if isinstance(path_or_dataset, (str, Path)):
             handle = xr.load_dataset(path_or_dataset)
             yield handle
         else:
-            handle = None
             yield path_or_dataset
     finally:
         if handle is not None:
