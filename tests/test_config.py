@@ -31,7 +31,7 @@ def test_get_data_path(tmp_path, monkeypatch):
     """
     Get SATRAIN data path and ensure that:
       - It points to the current working directory if no environment variable is set.
-      - It points to the path identified by the "SATRAIN_PATH" environment variable.
+      - It points to the path identified by the "SATRAIN_DATA_PATH" environment variable.
     """
     monkeypatch.setattr(satrain.config, "CONFIG_DIR", Path(random_string(64)))
     monkeypatch.delenv("SATRAIN_DATA_PATH", raising=False)

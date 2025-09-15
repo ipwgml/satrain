@@ -56,7 +56,7 @@ def test_evaluate_tabular(geometry, satrain_gmi_testing, tmp_path):
         geometry,
         retrieval_input,
         domain="conus",
-        satrain_path=satrain_gmi_testing,
+        data_path=satrain_gmi_testing,
         download=False
     )
 
@@ -87,7 +87,7 @@ def test_evaluate_tabular(geometry, satrain_gmi_testing, tmp_path):
         geometry,
         retrieval_input,
         domain="conus",
-        satrain_path=satrain_gmi_testing,
+        data_path=satrain_gmi_testing,
         download=False
     )
 

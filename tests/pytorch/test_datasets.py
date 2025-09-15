@@ -17,7 +17,7 @@ def test_dataset_satrain_tabular(satrain_gmi_on_swath_train):
         geometry="on_swath",
         split="training",
         retrieval_input=["gmi", "geo", "geo_ir", "ancillary"],
-        satrain_path=data_path,
+        data_path=data_path,
         download=False,
     )
 
@@ -43,7 +43,7 @@ def test_dataset_satrain_tabular_stacked(satrain_gmi_on_swath_train):
         geometry="on_swath",
         split="training",
         retrieval_input=["gmi", "geo_ir", "ancillary"],
-        satrain_path=data_path,
+        data_path=data_path,
         stack=True,
         download=False,
     )
@@ -65,7 +65,7 @@ def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
         geometry="on_swath",
         split="training",
         retrieval_input=["gmi", "geo", "geo_ir", "ancillary"],
-        satrain_path=data_path,
+        data_path=data_path,
         download=False,
         batch_size=batch_size,
     )
@@ -90,7 +90,7 @@ def test_dataset_satrain_tabular_batched(satrain_gmi_on_swath_train):
             {"name": "geo_ir"},
             {"name": "ancillary", "variables": ["two_meter_temperature"]},
         ],
-        satrain_path=data_path,
+        data_path=data_path,
         download=False,
         batch_size=batch_size,
     )
@@ -117,7 +117,7 @@ def test_dataset_satrain_spatial(satrain_gmi_gridded_train):
         geometry="gridded",
         split="training",
         retrieval_input=["gmi", "ancillary", "geo_ir"],
-        satrain_path=data_path,
+        data_path=data_path,
         download=False,
     )
 
@@ -140,7 +140,7 @@ def test_dataset_satrain_spatial_stacked(satrain_gmi_gridded_train):
         split="training",
         retrieval_input=["gmi", "ancillary", "geo_ir"],
         stack=True,
-        satrain_path=data_path,
+        data_path=data_path,
         download=False,
     )
 
