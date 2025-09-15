@@ -14,20 +14,17 @@ detecting and quantifying precipitation from satellite imagery.
  - Independent *testing* datasets derived from different regions and measurement techniques
  - Flexible evaluation framework
  
-## Example
-
-The figure shows retrieved precipitation from three retrievals trained using the
-SatRain training applied to observations from Typhoon Khanun during landfall on
-the Korean peninsula. Each of three SatRain-based retrievals use one of the
-three different types of input observations available in the SatRain dataset:
-single IR window channel (Panel (a)), Himawari-9 observations (Panel (b)), and
-GMI observations (Panel (c)). The retrievals are compared to the reference
-measurements from ground-based radar (Panel (a)), and baseline estimates from
-ERA5 (Panel (b)) and GPROF V7 (Panel (c)).
 
 ![Precipitation estimates from three SatRain-based retrievals  applied to observations from Typhoon Khanun during landfall on
 the Korean peninsula](docs/figures/retrieval_example.png)]
 
+Retrieved precipitation from three SatRain-trained retrievals applied to
+observations of Typhoon Khanun during landfall on the Korean peninsula. Each
+retrieval relies on a different type of input from the SatRain dataset: a single
+IR window channel (panel d), Himawari-9 observations (panel e), and GMI
+observations (panel f). The results are compared with reference ground-based
+radar measurements (panel a) and baseline estimates from ERA5 (panel b) and
+GPROF V7 (panel c).
 
 ## Documentation
 
