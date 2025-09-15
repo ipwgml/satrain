@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.utils module.
+Tests for the satrain.utils module.
 """
 
 import numpy as np

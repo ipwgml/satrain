@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.config module.
+Tests for the satrain.config module.
 """
 
 import os

@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.evaluation module.
+Tests for the satrain.evaluation module.
 """
 
 from pathlib import Path
@@ -35,7 +35,7 @@ def test_find_files(satrain_gmi_testing):
         "on_swath",
         ["gmi", "ancillary"],
         domain="conus",
-        ipwgml_path=satrain_gmi_testing,
+        satrain_path=satrain_gmi_testing,
         download=False,
     )
 
@@ -692,7 +692,7 @@ def test_evaluate_scene(geometry, satrain_gmi_testing, tmp_path):
         geometry,
         ["gmi", "ancillary"],
         domain="conus",
-        ipwgml_path=satrain_gmi_testing,
+        satrain_path=satrain_gmi_testing,
         download=False,
     )
 
@@ -742,7 +742,7 @@ def test_quantification_metrics(geometry, satrain_gmi_testing, tmp_path):
         geometry,
         ["gmi", "ancillary"],
         domain="conus",
-        ipwgml_path=satrain_gmi_testing,
+        satrain_path=satrain_gmi_testing,
         download=False,
     )
 
@@ -779,7 +779,7 @@ def test_evaluate(geometry, satrain_gmi_testing, tmp_path):
         geometry,
         ["gmi", "ancillary"],
         domain="conus",
-        ipwgml_path=satrain_gmi_testing,
+        satrain_path=satrain_gmi_testing,
         download=False,
     )
 

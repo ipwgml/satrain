@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.input module.
+Tests for the satrain.input module.
 """
 
 from pathlib import Path
@@ -200,7 +200,6 @@ def test_geo_input_on_swath(satrain_gmi_on_swath_train):
     """
     Test loading of GEO input data.
     """
-    ipwgml_path = satrain_gmi_on_swath_train
     files = get_local_files(
         dataset_name="satrain",
         base_sensor="gmi",

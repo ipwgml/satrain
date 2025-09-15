@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.pytorch module
+Tests for the satrain.pytorch module
 ===================================
 """
 
@@ -56,7 +56,7 @@ def test_evaluate_tabular(geometry, satrain_gmi_testing, tmp_path):
         geometry,
         retrieval_input,
         domain="conus",
-        ipwgml_path=satrain_gmi_testing,
+        satrain_path=satrain_gmi_testing,
         download=False
     )
 
@@ -87,7 +87,7 @@ def test_evaluate_tabular(geometry, satrain_gmi_testing, tmp_path):
         geometry,
         retrieval_input,
         domain="conus",
-        ipwgml_path=satrain_gmi_testing,
+        satrain_path=satrain_gmi_testing,
         download=False
     )
 

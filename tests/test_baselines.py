@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.baselines module.
+Tests for the satrain.baselines module.
 """
 import pytest
 

@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.tiling module.
+Tests for the satrain.tiling module.
 """
 
 import numpy as np

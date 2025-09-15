@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.data module.
+Tests for the satrain.data module.
 """
 import os
 
