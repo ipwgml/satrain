@@ -170,7 +170,7 @@ class SatRainTabular(Dataset):
         LOGGER.info("Loading %s data from %s training scenes.", self.split, len(target_files))
 
         for ind, target_file in enumerate(target_files):
-            target_data = xr.load_dataset(target_file)
+            target_data = xr.load_dataset(target_file, engine='h5netcdf')
             valid = ~self.target_config.get_mask(target_data)
             valid = xr.DataArray(
                 data=valid,
@@ -191,7 +191,7 @@ class SatRainTabular(Dataset):
                         "reference file %s. This indicates that the dataset has not been downloaded "
                         "properly."
                     )
-                input_data = extract_samples(xr.load_dataset(files[inpt.name][ind]), valid)
+                input_data = extract_samples(xr.load_dataset(files[inpt.name][ind], engine="h5netcdf"), valid)
                 if "time" in input_data.coords:
                     input_data = input_data.reset_index("time")
                 getattr(self, inpt.name + "_data").append(input_data)
@@ -494,11 +494,11 @@ class SatRainSpatial:
         """
         Load sample from dataset.
         """
-        with xr.open_dataset(self.get_target_files()[ind], chunks=None, cache=False) as data:
+        with xr.open_dataset(self.get_target_files()[ind], engine="h5netcdf", chunks=None, cache=False) as data:
             target_time = data.time.data.copy()
-            surface_precip = self.target_config.load_reference_precip(data)
-            precip_mask = self.target_config.load_precip_mask(data)
-            heavy_precip_mask = self.target_config.load_heavy_precip_mask(data)
+            surface_precip = self.target_config.load_reference_precip(data).copy()
+            precip_mask = self.target_config.load_precip_mask(data).copy()
+            heavy_precip_mask = self.target_config.load_heavy_precip_mask(data).copy()
             target = {
                 "surface_precip": torch.tensor(surface_precip),
                 "precip_mask": torch.tensor(precip_mask.astype(np.float32)),
@@ -517,7 +517,7 @@ class SatRainSpatial:
                 target_time=target_time,
             )
             for name, arr in data.items():
-                input_data[name] = torch.tensor(arr.astype(np.float32))
+                input_data[name] = torch.tensor(arr.astype(np.float32).copy())
 
             del files
             del data

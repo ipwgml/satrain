@@ -30,7 +30,7 @@ def open_if_required(path_or_dataset: str | Path | xr.Dataset) -> xr.Dataset:
     try:
         handle = None
         if isinstance(path_or_dataset, (str, Path)):
-            handle = xr.load_dataset(path_or_dataset)
+            handle = xr.open_dataset(path_or_dataset, engine="h5netcdf", chunks=None, cache=False)
             yield handle
         else:
             yield path_or_dataset
