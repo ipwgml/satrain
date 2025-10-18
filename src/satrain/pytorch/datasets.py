@@ -24,6 +24,7 @@ import torch
 from torch.utils.data import Dataset
 import hdf5plugin
 import xarray as xr
+from torchvision.transforms import v2
 
 from satrain.data import download_missing, get_local_files
 from satrain.definitions import ALL_INPUTS
@@ -500,7 +501,7 @@ class SatRainSpatial:
             precip_mask = self.target_config.load_precip_mask(data).copy()
             heavy_precip_mask = self.target_config.load_heavy_precip_mask(data).copy()
             target = {
-                "surface_precip": torch.tensor(surface_precip),
+                "surface_precip": torch.tensor(surface_precip.astype(np.float32)),
                 "precip_mask": torch.tensor(precip_mask.astype(np.float32)),
                 "heavy_precip_mask": torch.tensor(heavy_precip_mask.astype(np.float32)),
             }
@@ -524,17 +525,29 @@ class SatRainSpatial:
 
         if self.augment:
 
-            flip_h = self.rng.random() > 0.5
-            flip_v = self.rng.random() > 0.5
-            dims = tuple()
-            if flip_h:
-                dims = dims + (-2,)
-            if flip_v:
-                dims = dims + (-1,)
+            #flip_h = self.rng.random() > 0.5
+            #flip_v = self.rng.random() > 0.5
+            #dims = tuple()
+            #if flip_h:
+            #    dims = dims + (-2,)
+            #if flip_v:
+            #    dims = dims + (-1,)
+            #
+            degrees = self.rng.uniform(-180, 180)
+            scale = self.rng.uniform(0.8, 1.2)
+            shear = self.rng.uniform(-30.0, 30.0)
+            kwargs = {"angle": degrees, "scale": scale, "shear": shear, "translate": [0.0, 0.0]}
 
-            input_data = apply(input_data, partial(torch.flip, dims=dims))
-            target = apply(target, partial(torch.flip, dims=dims))
-            del dims
+            transform = lambda tensor: v2.functional.affine(tensor, **kwargs, fill=-1.5)
+            transform_t = lambda tensor: v2.functional.affine(tensor[None], **kwargs, fill=torch.nan)[0]
+
+            input_data = apply(input_data, transform)
+            target = apply(target, transform_t)
+
+            #input_data, target = apply((input_data, partial(torch.flip, dims=dims))
+            #target = apply(target, partial(torch.flip, dims=dims))
+
+            #del dims
 
         if self.stack:
             input_data = torch.cat(list(input_data.values()), axis=0)
