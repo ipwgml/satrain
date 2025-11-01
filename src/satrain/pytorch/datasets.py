@@ -170,8 +170,9 @@ class SatRainTabular(Dataset):
 
         LOGGER.info("Loading %s data from %s training scenes.", self.split, len(target_files))
 
-        for ind, target_file in enumerate(target_files):
-            target_data = xr.load_dataset(target_file, engine='h5netcdf')
+        from tqdm import tqdm
+        for ind, target_file in tqdm(enumerate(target_files)):
+            target_data = xr.load_dataset(target_file)
             valid = ~self.target_config.get_mask(target_data)
             valid = xr.DataArray(
                 data=valid,

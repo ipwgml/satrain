@@ -709,6 +709,7 @@ class GeoT(InputConfig):
         with open_if_required(geo_data_file) as geo_data:
             geo_data = geo_data.compute()
             geo_data = geo_data.transpose("time", "channel", ...)[{"channel": self.channels}]
+            print(geo_data.time)
             obs = geo_data.observations[{"time": self.time_steps}].data
             obs = np.reshape(obs, (-1,) + obs.shape[2:])
 
