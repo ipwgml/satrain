@@ -104,8 +104,7 @@ class TargetConfig:
         with open_if_required(target_data) as data:
 
             target = data[self.target].data
-
-            valid = np.ones_like(target, dtype=bool)
+            valid = np.isfinite(target)
 
             # Allow for numerical inaccuracies to avoid noisy masks for min_rqi = 1.0.
             if "radar_quality_index" in data:
