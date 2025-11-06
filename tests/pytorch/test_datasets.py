@@ -119,8 +119,29 @@ def test_dataset_satrain_spatial(satrain_gmi_gridded_train):
         retrieval_input=["gmi", "ancillary", "geo_ir"],
         data_path=data_path,
         download=False,
+        augment=False
     )
+    assert len(dataset) > 0
+    x, y = next(iter(dataset))
+    assert "obs_gmi" in x
+    assert x["obs_gmi"].shape == (13, 256, 256)
+    assert "ancillary" in x
+    assert y["surface_precip"].shape == (256, 256)
 
+    # Test augmentation
+    retrieval_input = [
+        {"name": "gmi", "nan": 0.0},
+        {"name": "ancillary", "nan": 0.0},
+    ]
+    dataset = SatRainSpatial(
+        base_sensor="gmi",
+        geometry="gridded",
+        split="training",
+        retrieval_input=retrieval_input,
+        data_path=data_path,
+        download=False,
+        augment=True
+    )
     assert len(dataset) > 0
     x, y = next(iter(dataset))
     assert "obs_gmi" in x
@@ -134,6 +155,7 @@ def test_dataset_satrain_spatial_stacked(satrain_gmi_gridded_train):
     Test loading of tabular data from the SatRain dataset.
     """
     data_path = satrain_gmi_gridded_train
+
     dataset = SatRainSpatial(
         base_sensor="gmi",
         geometry="gridded",
@@ -142,8 +164,26 @@ def test_dataset_satrain_spatial_stacked(satrain_gmi_gridded_train):
         stack=True,
         data_path=data_path,
         download=False,
+        augment=False
     )
+    assert len(dataset) > 0
+    x, y = next(iter(dataset))
+    assert isinstance(x, torch.Tensor)
 
+    retrieval_input = [
+        {"name": "gmi", "nan": 0.0},
+        {"name": "ancillary", "nan": 0.0},
+    ]
+    dataset = SatRainSpatial(
+        base_sensor="gmi",
+        geometry="gridded",
+        split="training",
+        retrieval_input=retrieval_input,
+        stack=True,
+        data_path=data_path,
+        download=False,
+        augment=True
+    )
     assert len(dataset) > 0
     x, y = next(iter(dataset))
     assert isinstance(x, torch.Tensor)

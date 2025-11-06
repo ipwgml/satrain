@@ -426,6 +426,18 @@ class SatRainSpatial:
         self.check_consistency()
         self.worker_init_fn(0)
 
+        self.fill_values = None
+        if self.augment:
+            self.fill_values = []
+            for inpt in self.retrieval_input:
+                fill_value = getattr(inpt, "nan", None)
+                if fill_value is None:
+                    raise ValueError(
+                        "For data augmentation all retrieval inputs must have the 'nan' attribute set."
+                    )
+                self.fill_values.append(fill_value)
+
+
     def worker_init_fn(self, w_id: int) -> None:
         """
         Seeds the dataset loader's random number generator.
@@ -496,21 +508,35 @@ class SatRainSpatial:
         """
         Load sample from dataset.
         """
+        if self.augment:
+            degrees = self.rng.uniform(-180, 180)
+            scale = self.rng.uniform(0.8, 1.2)
+            shear = self.rng.uniform(-30.0, 30.0)
+            kwargs = {"angle": degrees, "scale": scale, "shear": shear, "translate": [0.0, 0.0]}
+            input_transforms = [
+                lambda x: v2.functional.affine(x, **kwargs, fill=fill)
+                for inpt, fill in zip(self.retrieval_input, self.fill_values)
+            ]
+            target_transform = lambda tensor: v2.functional.affine(tensor[None], **kwargs, fill=torch.nan)[0]
+        else:
+            input_transforms = [lambda x: x for _ in self.retrieval_input]
+            target_transform = lambda x: x
+
         with xr.open_dataset(self.get_target_files()[ind], engine="h5netcdf", chunks=None, cache=False) as data:
             target_time = data.time.data.copy()
             surface_precip = self.target_config.load_reference_precip(data).copy()
             precip_mask = self.target_config.load_precip_mask(data).copy()
             heavy_precip_mask = self.target_config.load_heavy_precip_mask(data).copy()
             target = {
-                "surface_precip": torch.tensor(surface_precip.astype(np.float32)),
-                "precip_mask": torch.tensor(precip_mask.astype(np.float32)),
-                "heavy_precip_mask": torch.tensor(heavy_precip_mask.astype(np.float32)),
+                "surface_precip": target_transform(torch.tensor(surface_precip.astype(np.float32))),
+                "precip_mask": target_transform(torch.tensor(precip_mask.astype(np.float32))),
+                "heavy_precip_mask": target_transform(torch.tensor(heavy_precip_mask.astype(np.float32))),
             }
         data.close()
         del data
 
         input_data = {}
-        for inpt in self.retrieval_input:
+        for inpt, transform in zip(self.retrieval_input, input_transforms):
             files = self.get_source_files(inpt.name)
             if files is None:
                 continue
@@ -519,36 +545,10 @@ class SatRainSpatial:
                 target_time=target_time,
             )
             for name, arr in data.items():
-                input_data[name] = torch.tensor(arr.astype(np.float32).copy())
+                input_data[name] = transform(torch.tensor(arr.astype(np.float32).copy()))
 
             del files
             del data
-
-        if self.augment:
-
-            #flip_h = self.rng.random() > 0.5
-            #flip_v = self.rng.random() > 0.5
-            #dims = tuple()
-            #if flip_h:
-            #    dims = dims + (-2,)
-            #if flip_v:
-            #    dims = dims + (-1,)
-            #
-            degrees = self.rng.uniform(-180, 180)
-            scale = self.rng.uniform(0.8, 1.2)
-            shear = self.rng.uniform(-30.0, 30.0)
-            kwargs = {"angle": degrees, "scale": scale, "shear": shear, "translate": [0.0, 0.0]}
-
-            transform = lambda tensor: v2.functional.affine(tensor, **kwargs, fill=-1.5)
-            transform_t = lambda tensor: v2.functional.affine(tensor[None], **kwargs, fill=torch.nan)[0]
-
-            input_data = apply(input_data, transform)
-            target = apply(target, transform_t)
-
-            #input_data, target = apply((input_data, partial(torch.flip, dims=dims))
-            #target = apply(target, partial(torch.flip, dims=dims))
-
-            #del dims
 
         if self.stack:
             input_data = torch.cat(list(input_data.values()), axis=0)
