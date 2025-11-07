@@ -58,7 +58,8 @@ def get_data_path() -> Path:
         new_data_path = config.get("data_path", None)
         if new_data_path is None:
             LOGGER.warning(
-                "satrain config file exists at %s but it doesn't contain a 'data_path' entry."
+                "satrain config file exists at %s but it doesn't contain a 'data_path' entry.",
+                new_data_path
             )
         else:
             data_path = Path(new_data_path)
