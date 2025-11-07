@@ -303,6 +303,11 @@ class ATMS(PMW):
     observations and, if 'include_angles' is set to 'True', 'eia_atms' containing the
     earth incidence angles corresponding to the observations in 'obs_atms'.
     """
+    channels: np.ndarray
+    include_angles: bool
+    normalize: "str"
+    nan: float
+
     def __init__(
             self,
             channels: Optional[List[int]] = None,
@@ -361,6 +366,11 @@ class GMI(PMW):
     observations and, if 'include_angles' is set to 'True', 'eia_gmi' containing the
     earth incidence angles corresponding to the observations in 'obs_gmi'.
     """
+    channels: np.ndarray
+    include_angles: bool
+    normalize: "str"
+    nan: float
+
     def __init__(
             self,
             channels: Optional[List[int]] = None,
@@ -418,6 +428,10 @@ class Ancillary(InputConfig):
     load the ancillary data and include it in the retrieval input data as a
     variable named 'ancillary'.
     """
+    variables: List[str]
+    normalize: "str"
+    nan: float
+
     def __init__(
             self,
             variables: Optional[List[str]] = None,
@@ -493,6 +507,9 @@ class GeoIR(InputConfig):
     The GeoIR loads input data from IR-window channel observations interpolated in time to
     be closest to the nominal time of the precipitation estimates.
     """
+    normalize: "str"
+    nan: float
+
     def __init__(
             self,
             normalize: Optional[str] = None,
@@ -560,6 +577,8 @@ class GeoIRT(InputConfig):
     data pixel.
     """
     time_steps: List[int]
+    normalize: "str"
+    nan: float
 
     def __init__(
             self,
@@ -642,6 +661,11 @@ class GeoT(InputConfig):
     The full IR input comprises 2 10-minute observations before the median
     overpass time and 2 after the median overpass time.
     """
+
+    time_steps: List[int]
+    normalize: "str"
+    nan: float
+
     def __init__(
             self,
             channels: Optional[List[int]] = None,
@@ -709,6 +733,7 @@ class GeoT(InputConfig):
         with open_if_required(geo_data_file) as geo_data:
             geo_data = geo_data.compute()
             geo_data = geo_data.transpose("time", "channel", ...)[{"channel": self.channels}]
+            print(geo_data.time)
             obs = geo_data.observations[{"time": self.time_steps}].data
             obs = np.reshape(obs, (-1,) + obs.shape[2:])
 
@@ -737,6 +762,10 @@ class Geo(InputConfig):
     The full IR input comprises 2 10-minute observations before the median
     overpass time and 2 after the median overpass time.
     """
+    normalize: "str"
+    nan: float
+    channels: List[int]
+
     def __init__(
             self,
             channels: Optional[List[int]] = None,
@@ -753,17 +782,13 @@ class Geo(InputConfig):
         """
         if channels is None:
             channels = list(range(16))
-        self._channels = np.array(channels)
+        self.channels = np.array(channels)
         self.normalize = normalize
         self.nan = nan
 
     @property
     def name(self) -> str:
         return "geo"
-
-    @cached_property
-    def channels(self):
-        return self._channels
 
     @cached_property
     def stats(self) -> xr.Dataset:
@@ -811,6 +836,10 @@ class Seviri(InputConfig):
     """
     Special instance of the Geo class load observations from the SEVIRI sensor of the 'austria' domain.
     """
+    normalize: "str"
+    nan: float
+    channels: List[int]
+
     def __init__(
             self,
             channels: Optional[List[int]] = None,
@@ -831,7 +860,6 @@ class Seviri(InputConfig):
         self.all_goes_channels = [0, 1, 2, 4, 6, 7, 9, 10, 11, 13, 14, 15]
         if channels is None:
             channels = list(range(12))
-        self._channels = np.array(channels)
         self.normalize = normalize
         self.nan = nan
         self.remap_obs = remap_obs
@@ -841,12 +869,8 @@ class Seviri(InputConfig):
         return "geo"
 
     @cached_property
-    def channels(self):
-        return self._channels
-
-    @cached_property
     def goes_channels(self):
-        return [self.all_goes_channels[ind] for ind in self._channels]
+        return [self.all_goes_channels[ind] for ind in self.channels]
 
     @cached_property
     def lut(self) -> xr.Dataset:
@@ -908,6 +932,11 @@ class SeviriT(InputConfig):
     """
     Special instance of the Geo class load observations from the SEVIRI sensor of the 'austria' domain.
     """
+    normalize: "str"
+    nan: float
+    channels: List[int]
+    time_steps: List[int]
+
     def __init__(
             self,
             channels: Optional[List[int]] = None,
@@ -929,7 +958,7 @@ class SeviriT(InputConfig):
         self.all_goes_channels = [0, 1, 2, 4, 6, 7, 9, 10, 11, 13, 14, 15]
         if channels is None:
             channels = list(range(12))
-        self._channels = np.array(channels)
+        self.channels = np.array(channels)
         if time_steps is None:
             time_steps = list(range(7))
         self.time_steps = time_steps
@@ -942,12 +971,8 @@ class SeviriT(InputConfig):
         return "geo_t"
 
     @cached_property
-    def channels(self):
-        return self._channels
-
-    @cached_property
     def goes_channels(self):
-        return [self.all_goes_channels[ind] for ind in self._channels]
+        return [self.all_goes_channels[ind] for ind in self.channels]
 
     @cached_property
     def lut(self) -> xr.Dataset:
