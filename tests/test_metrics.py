@@ -1,5 +1,5 @@
 """
-Tests for the ipwgml.metrics module.
+Tests for the satrain.metrics module.
 """
 
 from concurrent.futures import ProcessPoolExecutor

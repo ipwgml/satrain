@@ -1289,7 +1289,6 @@ class Evaluator:
                         output_path=output_path,
                     )
                 except Exception as exc:
-                    raise exc
                     LOGGER.exception(
                         f"Encountered an error when processing scene {scene_ind}."
                     )

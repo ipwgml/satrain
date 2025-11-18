@@ -5,15 +5,26 @@ International Precipitation Working Group (IPWG) is a benchmark dataset for
 machine-learning-based satellite precipitation retrievals, i.e., algorithms for
 detecting and quantifying precipitation from satellite imagery.
 
-
 ## Features
 
  - Training, validation, and test splits derived from four years of overpasses of passive-microwave sensors
    over the conterminous united states (CONUS)
- - Multi-spectral input observations (microwave, infrared, and visible) from low-earth and geostationary platforms
+ - Collocated satellite observations from visible, infrared, and microwave sensors
  - Comprehensive ancillary data covering atmospheric parameters and surface properties
- - Independent *evaluation* datasets derived from independent time periods, regions, and measurement techniques
+ - Independent *testing* datasets derived from different regions and measurement techniques
  - Flexible evaluation framework
+ 
+
+![Precipitation estimates from three SatRain-based retrievals  applied to observations from Typhoon Khanun during landfall on
+the Korean peninsula](docs/figures/retrieval_example.png)]
+
+Retrieved precipitation from three SatRain-trained retrievals applied to
+observations of Typhoon Khanun during landfall on the Korean peninsula. Each
+retrieval relies on a different type of input from the SatRain dataset: a single
+IR window channel (panel d), Himawari-9 observations (panel e), and GMI
+observations (panel f). The results are compared with reference ground-based
+radar measurements (panel a) and baseline estimates from ERA5 (panel b) and
+GPROF V7 (panel c).
 
 ## Documentation
 

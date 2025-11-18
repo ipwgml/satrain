@@ -60,9 +60,9 @@ def get_data_url(dataset_name: str) -> str:
     """
     if dataset_name.lower() == "satrain":
         if _TESTING:
-            return "https://rain.atmos.colostate.edu/ipwgml2/.test"
+            return "https://rain.atmos.colostate.edu/ipwgml/.test"
         else:
-            return "https://rain.atmos.colostate.edu/ipwgml2/"
+            return "https://rain.atmos.colostate.edu/ipwgml/"
     raise ValueError(
         f"Unknown dataset name: {dataset_name}"
     )

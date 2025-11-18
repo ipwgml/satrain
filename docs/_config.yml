@@ -13,7 +13,7 @@ sphinx:
     autoclass_content: "both"
 
 repository:
-  url                       : https://github.com/simonpf/satrain
+  url                       : https://github.com/ipwgml/satrain
   path_to_book              : docs
   branch                    : main
 
