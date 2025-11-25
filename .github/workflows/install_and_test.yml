@@ -9,14 +9,15 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -25,6 +26,13 @@ jobs:
       run: |
         pip install pytest pytest-cov
         pip install -e .[complete]
-    - name: Run tests with pytest
+    - name: Run tests with pytest (Unix)
+      if: runner.os != 'Windows'
       run: |
          HDF5_USE_FILE_LOCKING=FALSE python -m pytest --cov=satrain tests/ --durations=0
+    
+    - name: Run tests with pytest (Windows)
+      if: runner.os == 'Windows'
+      run: |
+         $env:HDF5_USE_FILE_LOCKING="FALSE"
+         python -m pytest --cov=satrain tests/ --durations=0
