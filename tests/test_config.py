@@ -23,7 +23,7 @@ def random_string(length: int) -> str:
         uppercase letters.
     """
     letters = string.ascii_letters
-    result_str = str(random.choice(letters) for i in range(length))
+    result_str = "".join([random.choice(letters) for i in range(length)])
     return result_str
 
 
