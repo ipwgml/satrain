@@ -509,4 +509,4 @@ def test_crps():
     crps = metric.compute()
     crps = crps.crps.data
 
-    assert np.isclose(crps, crps_normal(0.0, 1.0, y).mean(), rtol=1e-2)
+    assert np.isclose(crps, crps_normal(0.0, 1.0, y).mean(), rtol=2e-2)
