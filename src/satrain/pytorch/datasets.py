@@ -79,7 +79,7 @@ class SatRainTabular(Dataset):
                 from all input dataset. If 'True', the tensors will be concatenated along the
                 feature axis and only a single tensor is loaded instead of dictionary.
             subsample: An optional fraction specifying how much of the dataset to load per epoch.
-            satrain_path: Path containing or to which to download the SATRAIN data.
+            satrain_path: Path containing or to which to download the SatRain data.
             download: If 'True', missing data will be downloaded upon dataset creation. Otherwise, only
                 locally available files will be used.
         """
@@ -343,7 +343,7 @@ class SatRainSpatial:
                 from all input dataset. If 'True', the tensors will be concatenated along the feature axis
                 and only a single tensor is loaded instead of dictionary.
             augment: If 'True' will apply random horizontal and vertical flips to the input data.
-            satrain_path: Path containing or to which to download the SATRAIN data.
+            satrain_path: Path containing or to which to download the SatRain data.
             download: If 'True', missing data will be downloaded upon dataset creation. Otherwise, only
                 locally available files will be used.
         """

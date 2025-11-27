@@ -1451,12 +1451,14 @@ class Evaluator:
             np.maximum(surface_precip_full, 1e-3),
             cmap=cmap_precip,
             norm=norm,
+            rasterized=True
         )
         cntr = ax.contour(
-            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidths=0.5
+            lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidths=0.75
         )
         ax.set_title("(a) Reference", loc="left")
-        add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=True)
+
+        add_ticks(ax, lon_ticks, lat_ticks, left=True, bottom=n_rows < 2)
         ax.coastlines()
         if swath_boundaries:
             ax.contour(lons, lats, pixel_inds, levels=[-0.5], linestyles=["--"], colors=["k"])
@@ -1486,9 +1488,9 @@ class Evaluator:
             ax = fig.add_subplot(gs[row_ind, col_ind], projection=crs)
 
             sp_ret = res.surface_precip.data
-            ax.pcolormesh(lons, lats, np.maximum(sp_ret, 1e-3), cmap=cmap_precip, norm=norm)
+            ax.pcolormesh(lons, lats, np.maximum(sp_ret, 1e-3), cmap=cmap_precip, norm=norm, rasterized=True)
             ax.contour(
-                lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidths=0.5
+                lons, lats, rqi, levels=rqi_levels, linestyles=["-", "--"], colors="grey", linewidths=0.75,
             )
             ax.set_title(f"({chr(ord('b') + ind)}) {name}", loc="left")
             add_ticks(ax, lon_ticks, lat_ticks, left=col_ind == 0, bottom=row_ind == n_rows - 1)

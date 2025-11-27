@@ -50,14 +50,13 @@ def get_median_time(path: Union[Path, str]) -> datetime:
     date = datetime.strptime(path.split("_")[-1][:-3], "%Y%m%d%H%M%S")
     return date
 
-
 def cleanup_files(path: Path, no_action: bool = False) -> None:
     """
     Removes all files that do not have matching files in all input and target files.
 
     Args:
         path: A Path object pointing to the folder containing the
-            SATRAIN training scenes.
+            SatRain training scenes.
         no_action: Just print filename, don't remove any files.
     """
     path = Path(path)

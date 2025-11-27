@@ -733,7 +733,6 @@ class GeoT(InputConfig):
         with open_if_required(geo_data_file) as geo_data:
             geo_data = geo_data.compute()
             geo_data = geo_data.transpose("time", "channel", ...)[{"channel": self.channels}]
-            print(geo_data.time)
             obs = geo_data.observations[{"time": self.time_steps}].data
             obs = np.reshape(obs, (-1,) + obs.shape[2:])
 
@@ -860,6 +859,7 @@ class Seviri(InputConfig):
         self.all_goes_channels = [0, 1, 2, 4, 6, 7, 9, 10, 11, 13, 14, 15]
         if channels is None:
             channels = list(range(12))
+        self.channels = channels
         self.normalize = normalize
         self.nan = nan
         self.remap_obs = remap_obs
