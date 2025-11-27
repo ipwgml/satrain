@@ -90,16 +90,52 @@ to tile and batch the input data from the testing data. See the documentation av
 
 The data is split up into subsets to provide a hierarchy of dataset sizes. This
 is to allow users to get started using a smaller dataset but also provide a
-dataset large enough to train complex models. The subsets are 'xs', 's', 'm',
-'l', 'xl'. While the files are not duplicated across those different subsets in
-the folder hierarchy, the subsets should be understood cumulatively meaning
-that, for example, the 'xl' dataset includes all files in 'xs', 's', 'm', and
-'l' folder.
+dataset large enough to train complex models. The subsets should be understood 
+cumulatively meaning that, for example, the 'xl' dataset includes all files in 
+'xs', 's', 'm', and 'l' folders. 
+
+```{table} Dataset Subset Sizes
+:name: subset_sizes
+
+| Subset | Approximate Size | Number of Scenes (Gridded)     |
+|--------|------------------|--------------------------------|
+| ``xs`` | 1 GB             | ~500                           |
+| ``s``  | 7 GB             | ~2, 000                        |
+| ``m``  | 10 GB            | ~5, 000                        |
+| ``l``  | 70 GB            | ~20, 000                       |
+| ``xl`` | 1-2 TB           | ~50, 000                       |
+```
+
+
+#### Subset Selection Guidelines
+
+**For beginners and development:**
+- Start with ``xs`` for learning the API and data structure
+- Use ``s`` for initial algorithm development and testing
+- Progress to ``m`` for validation and comparison
+
+**For research and production:**
+- Use ``l`` for serious model development and hyperparameter optimization
+- Use ``xl`` for final training runs and publication-quality results
+- Consider computational resources when selecting larger subsets
+
+#### Cumulative Nature of Subsets
+
+Subsets are inclusive, meaning:
+- ``s`` contains all data from ``xs`` plus additional scenes
+- ``m`` contains all data from ``xs`` + ``s`` plus additional scenes  
+- ``l`` contains all data from ``xs`` + ``s`` + ``m`` plus additional scenes
+- ``xl`` contains all available training/validation data
+
+This design allows you to:
+1. Start development with smaller subsets
+2. Scale up gradually as needed
+3. Ensure reproducibility when moving between subset sizes
+4. Compare results across different data volumes
 
 ## File Structure
- 
- 
-#### Training and Validation Data
+
+### Training and Validation Data
 The data is organzied into a folder structure following the hierarchy explained above. For the training data the folder structure looks as follows.
 
 ```
@@ -121,7 +157,7 @@ The data is organzied into a folder structure following the hierarchy explained 
                     └── <year>/<month>/<day>/
 ```
 
-#### Testing data
+### Testing Data
 
 For the testing data, the size-based subsets are replaced by the three domains: ``austria``, ``conus``, and ``korea``.
 
