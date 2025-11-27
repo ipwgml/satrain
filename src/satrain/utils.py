@@ -116,5 +116,5 @@ def extract_samples(dataset: xr.Dataset, mask: xr.DataArray):
         else:
             extracted[name] = var
     for dim in dataset.dims:
-        extracted[dim] = dataset[dim]
+        extracted[dim] = dataset[dim].copy()
     return extracted

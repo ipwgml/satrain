@@ -272,8 +272,9 @@ def download_missing(
 
     if 0 < len(missing):
         LOGGER.info(
-            "Downloading %s files for base_sensor %s, split %s, and geometry %s.",
+            "Downloading %s %s files for base_sensor %s, split %s, and geometry %s.",
             len(missing),
+            source,
             base_sensor,
             split,
             geometry

@@ -24,9 +24,11 @@ import torch
 from torch.utils.data import Dataset
 import hdf5plugin
 import xarray as xr
+from rich.progress import Progress
 from torchvision.transforms import v2
 
-from satrain.data import download_missing, get_local_files
+import satrain
+from satrain.data import download_missing, get_local_files, progress_bar_or_not
 from satrain.definitions import ALL_INPUTS
 from satrain import config
 from satrain.input import InputConfig, parse_retrieval_inputs
@@ -153,7 +155,7 @@ class SatRainTabular(Dataset):
                 " Please make sure that the satrain data path is correct or "
                 "set 'download' to True to download the file."
             )
-        self._load_training_data(files)
+        self._load_training_data(files, progress_bar=True)
 
         self.rng = np.random.default_rng(seed=42)
         if self.shuffle:
@@ -162,7 +164,22 @@ class SatRainTabular(Dataset):
             self.indices = np.arange(self.target_data.samples.size)
 
 
-    def _load_training_data(self, files: Dict[str, Path]):
+    def _load_training_data(
+            self,
+            files: Dict[str, Path],
+            progress_bar: bool = False
+    ) -> None:
+        """
+        Load tabular training data into memory.
+
+        This function extract all pixels with valid reference data from the SatRain input and reference files
+        and stores them as xarray.Datasets in the attributes of the object.
+
+        Args:
+            files: A dictionary mapping data source names to lists containing the paths of the SatRain scenes
+                 from which to load the data.
+            progress_bar: Flag indicating whether or not to display a progress bar when loading the data.
+        """
         target_files = files["target"]
         self.target_data = []
         for inpt in self.retrieval_input:
@@ -170,33 +187,62 @@ class SatRainTabular(Dataset):
 
         LOGGER.info("Loading %s data from %s training scenes.", self.split, len(target_files))
 
-        from tqdm import tqdm
-        for ind, target_file in tqdm(enumerate(target_files)):
-            target_data = xr.load_dataset(target_file)
-            valid = ~self.target_config.get_mask(target_data)
-            valid = xr.DataArray(
-                data=valid,
-                dims=target_data.surface_precip.dims
-            )
-            target_data = extract_samples(target_data, valid)
-            if "time" in target_data.coords:
-                target_data = target_data.reset_index("time")
-            self.target_data.append(target_data)
+        if progress_bar and len(files) > 0:
+            progress = Progress(console=satrain.logging.get_console())
+        else:
+            progress = None
 
-            ref_time = get_median_time(target_file)
+        with progress_bar_or_not(progress_bar=progress_bar) as progress:
+            if progress is not None:
+                bar = progress.add_task(
+                    f"Loading training samples:", total=len(target_files)
+                )
+            else:
+                bar = None
 
-            for inpt in self.retrieval_input:
-                input_time = get_median_time(files[inpt.name][ind])
-                if ref_time != input_time:
-                    raise ValueError(
-                        "Encountered an input files %s that is inconsistent with the corresponding "
-                        "reference file %s. This indicates that the dataset has not been downloaded "
-                        "properly."
-                    )
-                input_data = extract_samples(xr.load_dataset(files[inpt.name][ind], engine="h5netcdf"), valid)
-                if "time" in input_data.coords:
-                    input_data = input_data.reset_index("time")
-                getattr(self, inpt.name + "_data").append(input_data)
+            for ind, target_file in enumerate(target_files):
+                target_data = xr.load_dataset(target_file, engine="h5netcdf")
+                valid = ~self.target_config.get_mask(target_data)
+                valid = xr.DataArray(
+                    data=valid,
+                    dims=target_data.surface_precip.dims
+                )
+                target_data = extract_samples(target_data, valid)
+                if "time" in target_data.coords:
+                    target_data = target_data.reset_index("time")
+
+                for var in target_data:
+                    if target_data[var].dtype == np.float64:
+                        target_data[var] = target_data[var].astype(np.float32)
+
+                self.target_data.append(target_data)
+                del target_data
+
+                ref_time = get_median_time(target_file)
+
+                for inpt in self.retrieval_input:
+                    input_time = get_median_time(files[inpt.name][ind])
+                    if ref_time != input_time:
+                        raise ValueError(
+                            "Encountered an input files %s that is inconsistent with the corresponding "
+                            "reference file %s. This indicates that the dataset has not been downloaded "
+                            "properly."
+                        )
+                    input_data = extract_samples(xr.load_dataset(files[inpt.name][ind], engine="h5netcdf"), valid)
+                    for var in input_data:
+                        if input_data[var].dtype == np.float64:
+                            input_data[var] = input_data[var].astype(np.float32)
+
+                    if "scan_time" in input_data:
+                        input_data = input_data.drop_vars(("scan_time"))
+                    if "time" in input_data.coords:
+                        input_data = input_data.reset_index("time")
+                    getattr(self, inpt.name + "_data").append(input_data)
+
+                    del input_data
+
+                if progress is not None:
+                    progress.advance(bar, advance=1)
 
         self.target_data = xr.concat(self.target_data, dim="samples")
         for inpt in self.retrieval_input:
