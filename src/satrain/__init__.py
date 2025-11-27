@@ -10,3 +10,10 @@ Precipitation Working Group (IPWG).
 import hdf5plugin
 
 from .data import get_files
+
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("satrain")
+except PackageNotFoundError:
+    __version__ = "0.1.dev0+unknown"
