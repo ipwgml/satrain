@@ -265,12 +265,12 @@ class PMW(InputConfig):
             key 'eia_<sensor_name>'.
         """
         with open_if_required(pmw_data_file) as pmw_data:
-            pmw_data = pmw_data[["observations", "earth_incidence_angle"]].compute().transpose("channel", ...)
-            obs = pmw_data["observations"].compute().transpose("channel", ...)
+            pmw_data = pmw_data[["observations", "earth_incidence_angle"]]
+            obs = pmw_data["observations"]
             if self.channels is not None:
-                obs = obs[{"channel": self.channels}]
+                obs = obs[{"channel": self.channels}].compute().transpose("channel", ...)
             else:
-                obs = obs[{"channel": slice(0, None)}]
+                obs = obs[{"channel": slice(0, None)}].compute().transpose("channel", ...)
 
             obs = obs.data
             obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
@@ -279,11 +279,11 @@ class PMW(InputConfig):
                 f"obs_{self.name}": obs
             }
             if self.include_angles:
-                angs = pmw_data["earth_incidence_angle"].compute().transpose("channel", ...)
+                angs = pmw_data["earth_incidence_angle"]
                 if self.channels is not None:
-                    angs = angs[{"channel": self.channels}]
+                    angs = angs[{"channel": self.channels}].compute().transpose("channel", ...)
                 else:
-                    angs = angs[{"channel": slice(0, None)}]
+                    angs = angs[{"channel": slice(0, None)}].compute().transpose("channel", ...)
                 angs = normalize(angs.data, self.ang_stats, how=self.normalize, nan=self.nan)
                 inpt_data[f"eia_{self.name}"] = angs
 
