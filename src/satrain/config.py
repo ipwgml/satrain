@@ -10,7 +10,7 @@ data is stored.
 
 In order to conserve the ``satrain`` configuration between sessions, ``satrain`` will
 create a ``config.toml`` in the user's configuration folder. By default, the 'data_path'
- will be read from this file. However, the 'data_path' read from the configuration file
+will be read from this file. However, the 'data_path' read from the configuration file
 will be overwritten by the ``SATRAIN_DATA_PATH`` environment variable.
 """
 import logging
@@ -30,7 +30,7 @@ CONFIG_DIR = Path(appdirs.user_config_dir("satrain", "ipwg"))
 
 def get_data_path() -> Path:
     """
-    Get the root of the SATRAIN data path.
+    Get the root of the SatRain data path.
 
     The satrain data path is determined as follows:
         1. In the absence of any configuration, it defaults to the current working directory.

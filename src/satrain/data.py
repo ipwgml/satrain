@@ -50,7 +50,7 @@ def enable_testing() -> None:
 
 def get_data_url(dataset_name: str) -> str:
     """
-    Returns the URL from which the SATRAIN data can be downloaded.
+    Returns the URL from which the SatRain data can be downloaded.
 
     Args:
         dataset_name: The name of the dataset ('satrain').
@@ -244,7 +244,7 @@ def download_missing(
         subset: The subset, i.e, 'xs', 's', 'm', 'l', or 'xl'; only relevant
             for 'training', 'validation', or 'testing' splits.
         domain: The name of the test domain. Only relevant if split='testing'.
-        destination: Path pointing to the local directory containing the SATRAIN data.
+        destination: Path pointing to the local directory containing the SatRain data.
         progress_base: Whether or not display a progress bar displaying the download progress.
 
     Return:
@@ -272,8 +272,9 @@ def download_missing(
 
     if 0 < len(missing):
         LOGGER.info(
-            "Downloading %s files for base_sensor %s, split %s, and geometry %s.",
+            "Downloading %s %s files for base_sensor %s, split %s, and geometry %s.",
             len(missing),
+            source,
             base_sensor,
             split,
             geometry
@@ -299,10 +300,10 @@ def download_dataset(
         data_path: Optional[Union[str, Path]] = None
 ) -> Dict[str, List[Path]]:
     """
-    Download SATRAIN dataset and return list of local files.
+    Download SatRain dataset and return list of local files.
 
     Args:
-        dataset_name: The SATRAIN dataset to download.
+        dataset_name: The SatRain dataset to download.
         base_sensor: The base sensor of the dataset.
         input_data: The input data sources for which to download the data.
         split: Which split of the data to download.

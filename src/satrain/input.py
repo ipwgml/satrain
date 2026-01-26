@@ -265,12 +265,12 @@ class PMW(InputConfig):
             key 'eia_<sensor_name>'.
         """
         with open_if_required(pmw_data_file) as pmw_data:
-            pmw_data = pmw_data[["observations", "earth_incidence_angle"]].compute().transpose("channel", ...)
-            obs = pmw_data["observations"].compute().transpose("channel", ...)
+            pmw_data = pmw_data[["observations", "earth_incidence_angle"]]
+            obs = pmw_data["observations"]
             if self.channels is not None:
-                obs = obs[{"channel": self.channels}]
+                obs = obs[{"channel": self.channels}].compute().transpose("channel", ...)
             else:
-                obs = obs[{"channel": slice(0, None)}]
+                obs = obs[{"channel": slice(0, None)}].compute().transpose("channel", ...)
 
             obs = obs.data
             obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
@@ -279,11 +279,11 @@ class PMW(InputConfig):
                 f"obs_{self.name}": obs
             }
             if self.include_angles:
-                angs = pmw_data["earth_incidence_angle"].compute().transpose("channel", ...)
+                angs = pmw_data["earth_incidence_angle"]
                 if self.channels is not None:
-                    angs = angs[{"channel": self.channels}]
+                    angs = angs[{"channel": self.channels}].compute().transpose("channel", ...)
                 else:
-                    angs = angs[{"channel": slice(0, None)}]
+                    angs = angs[{"channel": slice(0, None)}].compute().transpose("channel", ...)
                 angs = normalize(angs.data, self.ang_stats, how=self.normalize, nan=self.nan)
                 inpt_data[f"eia_{self.name}"] = angs
 
@@ -733,7 +733,6 @@ class GeoT(InputConfig):
         with open_if_required(geo_data_file) as geo_data:
             geo_data = geo_data.compute()
             geo_data = geo_data.transpose("time", "channel", ...)[{"channel": self.channels}]
-            print(geo_data.time)
             obs = geo_data.observations[{"time": self.time_steps}].data
             obs = np.reshape(obs, (-1,) + obs.shape[2:])
 
@@ -860,6 +859,7 @@ class Seviri(InputConfig):
         self.all_goes_channels = [0, 1, 2, 4, 6, 7, 9, 10, 11, 13, 14, 15]
         if channels is None:
             channels = list(range(12))
+        self.channels = channels
         self.normalize = normalize
         self.nan = nan
         self.remap_obs = remap_obs

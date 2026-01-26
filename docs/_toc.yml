@@ -1,8 +1,9 @@
 format: jb-book
 root: intro
 chapters:
-- file: getting_started
+- file: getting_started.ipynb
 - file: dataset
+- file: requirements
 - file: notebooks/testing.ipynb
 - file: notebooks/input_and_target_data.ipynb
 - file: examples
@@ -20,3 +21,11 @@ chapters:
     - file: api/metrics
     - file: api/pytorch/pytorch
     - file: api/pytorch/datasets
+    - file: api/config
+    - file: api/cli
+    - file: api/utils
+    - file: api/logging
+    - file: api/tiling
+    - file: api/plotting
+    - file: api/baselines
+- file: contributing

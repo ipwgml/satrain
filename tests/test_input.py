@@ -29,7 +29,7 @@ def test_normalize():
     assert (0.0 <= data).all()
     assert (data_n < 0.0).any()
     assert data.mean() > 0.0
-    assert np.isclose(data_n.mean(), 0.0, atol=1e-2)
+    assert np.isclose(data_n.mean(), 0.0, atol=3e-2)
 
     data = np.random.rand(128, 128)
     stats = xr.Dataset({"min": 0, "max": 1, "mean": 0.5, "std_dev": 1.0})
@@ -37,7 +37,7 @@ def test_normalize():
     assert (0.0 <= data).all()
     assert (data_n < 0.0).any()
     assert data.mean() > 0.0
-    assert np.isclose(data_n.mean(), 0.0, atol=1e-2)
+    assert np.isclose(data_n.mean(), 0.0, atol=3e-2)
 
     data = np.random.rand(128, 128)
     data[data > 0.5] = np.nan

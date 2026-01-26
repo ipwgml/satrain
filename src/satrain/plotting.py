@@ -20,7 +20,7 @@ import xarray as xr
 
 def set_style():
     """
-    Set the SATRAIN matplotlib style.
+    Set the SatRain matplotlib style.
     """
     plt.style.use(Path(__file__).parent / "files" / "satrain.mplstyle")
 

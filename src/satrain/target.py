@@ -8,9 +8,9 @@ the loading of the retrieval reference data.
 Usage
 -----
 
-``TargetConfig`` objects can be passed to the :class:`satrain.evaluation.Evaluator` to configure
+``TargetConfig`` objects can be passed to the :py:class:`satrain.evaluation.Evaluator` to configure
 the MRMS pixels that are used in the evaluation of the retrieval. They can also be passed to
-the dataset classes defined in :module:`satrain.pytorch.datasets` to exclude low-quality pixels
+the dataset classes defined in :py:mod:`satrain.pytorch.datasets` to exclude low-quality pixels
 from the training.
 
 Members

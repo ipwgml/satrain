@@ -23,13 +23,13 @@ def random_string(length: int) -> str:
         uppercase letters.
     """
     letters = string.ascii_letters
-    result_str = str(random.choice(letters) for i in range(length))
+    result_str = "".join([random.choice(letters) for i in range(length)])
     return result_str
 
 
 def test_get_data_path(tmp_path, monkeypatch):
     """
-    Get SATRAIN data path and ensure that:
+    Get SatRain data path and ensure that:
       - It points to the current working directory if no environment variable is set.
       - It points to the path identified by the "SATRAIN_DATA_PATH" environment variable.
     """

@@ -72,16 +72,13 @@ class Metric:
             shm = shared_memory.SharedMemory(create=True, size=array.nbytes)
             array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
             array[:] = 0.0
-            self._buffers[name] = (shm.name, shape, dtype)
-        self.owner = True
+            self._buffers[name] = (shm, shape, dtype)
 
     def __getattr__(self, name: str) -> Any:
         buffers = self.__dict__.get("_buffers", None)
         if buffers is not None:
             if name in buffers:
                 shm, shape, dtype = buffers[name]
-                if isinstance(shm, str):
-                    shm = shared_memory.SharedMemory(shm)
                 buffers[name] = (shm, shape, dtype)
                 return np.ndarray(shape, dtype=dtype, buffer=shm.buf)
         raise AttributeError(
@@ -100,6 +97,30 @@ class Metric:
             array = getattr(self, name)
             array[:] = 0.0
 
+    def __getstate__(self):
+        """
+        Get state dictionary to pickle.
+
+        This function replaces the SharedMemory objects by their file references.
+        """
+        state = self.__dict__.copy()
+        buffers = state["_buffers"]
+        state["_buffers"] = {
+            name: (shm.name, shape, dtype) for name, (shm, shape, dtype) in buffers.items()
+        }
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """
+        Set object state from pickle dict.
+        """
+        self.__dict__.update(state)
+        buffers = self._buffers
+        buffers = {
+            name: (shared_memory.SharedMemory(shm, create=False), shape, dtype) for name, (shm, shape, dtype) in buffers.items()
+        }
+        self._buffers = buffers
+
     def cleanup(self) -> None:
         """
         Remove shared memory
@@ -110,20 +131,6 @@ class Metric:
                 if isinstance(shm, str):
                     shm = shared_memory.SharedMemory(shm)
                 shm.unlink()
-
-    def __del__(self):
-        """
-        Close connections to shared memory.
-        """
-        if hasattr(self, "_buffers"):
-            for name, shm in self._buffers.items():
-                shm = shm[0]
-                if isinstance(shm, str):
-                    shm = shared_memory.SharedMemory(shm)
-                shm.close()
-                if self.owner:
-                    pass
-                    # shm.unlink()
 
 
 class QuantificationMetric(Metric):

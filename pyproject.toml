@@ -1,25 +1,14 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"  # If not defined, then legacy behavior can happen.
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
 
 
 [project]
-# This is the name of your project. The first time you publish this
-# package, this name will be registered for you. It will determine how
-# users can install this project, e.g.:
-#
-# $ pip install sampleproject
-#
-# And where it will live on PyPI: https://pypi.org/project/sampleproject/
-#
-# There are some restrictions on what makes a valid project name
-# specification here:
-# https://packaging.python.org/specifications/core-metadata/#name
 name = "satrain"
-version = "0.1"  # REQUIRED, although can be dynamic
+dynamic = ["version"]
 description = "A machine-learning benchmark dataset for satellite-based precipitation retrievals"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = "MIT"
 keywords = ["machine-learning", "benchmark", "dataset", "meteorology", "geophyisics"]
 authors = [
@@ -61,3 +50,5 @@ include-package-data = true
 
 [tool.setuptools.package-data]
 "satrain" = ["files/*.json", "files/*.json.gz", "files/*.rc", "files/stats/*.nc", "files/*.mplstyle"]
+
+[tool.setuptools_scm]
