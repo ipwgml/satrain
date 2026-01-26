@@ -765,6 +765,19 @@ class Evaluator:
                     destination=data_path,
                     progress_bar=True
                 )
+        for geometry in ["gridded", "on_swath"]:
+            if download:
+                download_missing(
+                    dataset_name="satrain",
+                    base_sensor=self.base_sensor,
+                    geometry=geometry,
+                    split="testing",
+                    source="target",
+                    domain=self.domain,
+                    destination=data_path,
+                    progress_bar=True
+                )
+
         files = get_local_files(
             dataset_name="satrain",
             base_sensor=self.base_sensor,
@@ -778,17 +791,6 @@ class Evaluator:
                 setattr(self, name + "_" + self.geometry, source_files)
 
         for geometry in ["gridded", "on_swath"]:
-            if download:
-                download_missing(
-                    dataset_name="satrain",
-                    base_sensor=self.base_sensor,
-                    geometry=geometry,
-                    split="testing",
-                    source="target",
-                    domain=self.domain,
-                    destination=data_path,
-                    progress_bar=True
-                )
             files = get_local_files(
                 dataset_name="satrain",
                 base_sensor=self.base_sensor,
