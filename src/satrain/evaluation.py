@@ -109,7 +109,8 @@ def _check_retrieval_results(
         "surface_precip",
         "probability_of_precip",
         "precip_flag",
-        "probability_of_heavy_precipiation" "heavy_precip_flag",
+        "probability_of_heavy_precip",
+        "heavy_precip_flag",
     ]
     missing = []
     for var in expected:
@@ -292,7 +293,7 @@ def load_retrieval_input_data(
             dims = (f"features_{inpt.name}",) + spatial_dims
             data = inpt.load_data(path, target_time=input_data.time)
             for name, arr in data.items():
-                input_data[name] = dims, arr
+                input_data[name] = dims[:arr.ndim], arr
             if inpt.name in ["gmi", "atms"]:
                 with xr.open_dataset(path) as data:
                     input_data.attrs.update(data.attrs)
@@ -737,7 +738,7 @@ class Evaluator:
             satrain.metrics.MSE(),
             satrain.metrics.SMAPE(),
             satrain.metrics.CorrelationCoef(),
-            satrain.metrics.SpectralCoherence(window_size=48),
+            satrain.metrics.SpectralCoherence(window_size=80),
         ]
         self._precip_detection_metrics = [
             satrain.metrics.POD(),
@@ -1339,8 +1340,8 @@ class Evaluator:
         ax_width: int = 5,
         contour_legend: bool = True,
         include_metrics: bool = False,
-        n_rows: int = 1
-
+        n_rows: int = 1,
+        bounds: Optional[Tuple[float, float, float, float]] = None
     ) -> "plt.Figure":
         """
         Plot retrieval results for a given retrieval scene.
@@ -1358,12 +1359,19 @@ class Evaluator:
             ax_width: The width of each axes objects in inches.
             contour_legend: Whether or not to draw a legend for the radar boundary contours.
             include_metrics: Whether or not to print metrics onto retrieval results.
+            n_rows: The number of rows across which to distribute the plots.
+            bounds: An optional tuple ``(lon_min, lat_min, lon_max ,lat_max)`` defining the
+                longitude and latitude coordinates to use a x-axis and y-axis limits,
+                respectively.
+
+        Return:
+            The matplotlib.Figure object containing the plot.
         """
         try:
             from satrain.plotting import add_ticks, scale_bar
             import cartopy.crs as ccrs
             import matplotlib.pyplot as plt
-            from matplotlib.colors import LogNorm
+            from matplotlib.colors import LogNorm, Normalize
             from matplotlib.gridspec import GridSpec
         except ImportError:
             raise RuntimeError(
@@ -1417,12 +1425,16 @@ class Evaluator:
             lat_max = lat_max + margin * d_lat
 
         valid_lons = np.isfinite(sp_ref).any(0)
-        lon_min = lons[valid_lons].min()
-        lon_max = lons[valid_lons].max()
-        if margin is not None:
-            d_lon = lon_max - lon_min
-            lon_min = lon_min - 0.5 * margin * d_lon
-            lon_max = lon_max + margin * d_lon
+
+        if bounds is not None:
+            lon_min, lat_min, lon_max, lat_max = bounds
+        else:
+            lon_min = lons[valid_lons].min()
+            lon_max = lons[valid_lons].max()
+            if margin is not None:
+                d_lon = lon_max - lon_min
+                lon_min = lon_min - 0.5 * margin * d_lon
+                lon_max = lon_max + margin * d_lon
 
         lon_ticks = np.arange(
             trunc(lons.min() // 5) * 5.0, ceil(lons.max() // 5) * 5 + 1.0, 5.0
@@ -1442,6 +1454,7 @@ class Evaluator:
             wspace=0.1
         )
         norm = LogNorm(1e-1, 1e2)
+        #norm = Normalize(0, 20)
 
         mask = np.isnan(sp_ref)
 
@@ -1513,7 +1526,7 @@ class Evaluator:
                 ax.text(0.05, 0.1, metrics, transform=ax.transAxes, ha='left', va='center', fontsize=12, color='deeppink')
 
 
-        fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"), fontsize=16)
+        fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"), y=1.0)
 
         cax = fig.add_subplot(gs[:-1, -1])
         plt.colorbar(m, cax=cax, label="Surface precipitation [mm h$^{-1}$]")
