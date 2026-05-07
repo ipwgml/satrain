@@ -14,11 +14,17 @@ import xarray as xr
 BASELINES_GMI = {
     "era5": "ERA5",
     "gprof_v07": "GPROF V7 (GMI)",
+    "persiann_ccs": "PERSIANN CCS",
+    "persiann_pdir_now": "PERSIANN PDIR-Now",
+    "punet": "PU-Net",
 }
 
 BASELINES_ATMS = {
     "era5": "ERA5",
     "gprof_v07": "GPROF V7 (ATMS)",
+    "persiann_ccs": "PERSIANN CCS",
+    "persiann_pdir_now": "PERSIANN PDIR-Now",
+    "punet": "PU-Net",
 }
 
 
