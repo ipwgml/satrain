@@ -640,9 +640,10 @@ class GeoIRT(InputConfig):
         with open_if_required(geo_data_file) as geo_data:
             geo_data = geo_data.transpose("time", ...)
             obs = geo_data.observations[{"time": self.time_steps}].data
+            obs_time = geo_data.time[{"time": self.time_steps}].data
 
         obs = normalize(obs, self.stats, how=self.normalize, nan=self.nan)
-        return {"obs_geo_ir": obs}
+        return {"obs_geo_ir": obs, "obs_geo_ir_time": obs_time}
 
     @property
     def features(self) -> Dict[str, int]:
