@@ -10,6 +10,7 @@ dependencies:
   - pytorch::pytorch-cuda=12.1
   - pytorch::torchvision
   - pytorch::torchaudio
+  - nodejs>=18
   - cfgrib
   - netcdf4
   - pyyaml
