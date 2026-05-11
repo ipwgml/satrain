@@ -2,6 +2,7 @@ format: jb-book
 root: intro
 chapters:
 - file: getting_started.ipynb
+- file: notebooks/baselines.ipynb
 - file: dataset
 - file: requirements
 - file: notebooks/testing.ipynb

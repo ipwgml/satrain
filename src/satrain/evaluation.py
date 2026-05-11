@@ -1541,7 +1541,10 @@ class Evaluator:
         return fig
 
     def get_precip_quantification_results(
-        self, name: Optional[str] = None, include_baselines: bool = True
+            self,
+            name: Optional[str] = None,
+            include_baselines: bool = True,
+            baselines: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """
         Get scalar results from precipitation estimation metrics as pandas.Dataframe.
@@ -1566,7 +1569,11 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.base_sensor, domain=self.domain)
+            results_b = satrain.baselines.load_baseline_results(
+                self.base_sensor,
+                domain=self.domain,
+                baselines=baselines
+            )
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1632,7 +1639,7 @@ class Evaluator:
             units.append(results[var].attrs["unit"])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.base_sensor, domain=self.domain)
+            results_b = satrain.baselines.load_baseline_results(self.base_sensor, domain=self.domain)
             vars = list(results.variables.keys())
             order += list(results_b["algorithm"].data)
             results = xr.concat([results, results_b[vars]], dim="algorithm")
@@ -1706,7 +1713,10 @@ class Evaluator:
 
 
     def get_precip_detection_results(
-        self, name: Optional[str] = None, include_baselines: bool = True
+            self,
+            name: Optional[str] = None,
+            include_baselines: bool = True,
+            baselines: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """
         Get scalar results from precipitation detection metrics as pandas.Dataframe.
@@ -1730,7 +1740,11 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.base_sensor, domain=self.domain)
+            results_b = satrain.baselines.load_baseline_results(
+                self.base_sensor,
+                domain=self.domain,
+                baselines=baselines
+            )
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1746,7 +1760,10 @@ class Evaluator:
         return pd.DataFrame(data=data, index=results.algorithm)
 
     def get_prob_precip_detection_results(
-        self, name: Optional[str] = None, include_baselines: bool = True
+            self,
+            name: Optional[str] = None,
+            include_baselines: bool = True,
+            baselines: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """
         Get scalar results from probabilistic precipitation detection
@@ -1756,6 +1773,7 @@ class Evaluator:
             name: An optional name for the retrieval algorithm.
             include_baselines: If 'True', results from retrieval baselines
                 will be included in the results.
+            baselines: List of names of the baseline to include in the results.
 
         Return:
             A pandas.DataFrame containing the combined scalar results from
@@ -1771,7 +1789,11 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.base_sensor)
+            results_b = satrain.baselines.load_baseline_results(
+                self.base_sensor,
+                domain=self.domain,
+                baselines=baselines
+            )
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1787,7 +1809,11 @@ class Evaluator:
         return pd.DataFrame(data=data, index=results.algorithm)
 
     def get_heavy_precip_detection_results(
-        self, name: Optional[str] = None, include_baselines: bool = True
+        self,
+        name: Optional[str] = None,
+        include_baselines: bool = True,
+        baselines: Optional[List[str]] = None
+
     ) -> pd.DataFrame:
         """
         Get scalar results from heavy precipitation detection metrics as pandas.Dataframe.
@@ -1796,6 +1822,7 @@ class Evaluator:
             name: An optional name for the retrieval algorithm.
             include_baselines: If 'True', results from retrieval baselines will be included
                 in the results.
+            baselines: List of names of the baseline to include in the results.
 
         Return:
             A pandas.DataFrame containing the combined scalar results from
@@ -1811,7 +1838,11 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.base_sensor)
+            results_b = satrain.baselines.load_baseline_results(
+                self.base_sensor,
+                domain=self.domain,
+                baselines=baselines
+            )
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
@@ -1827,7 +1858,10 @@ class Evaluator:
         return pd.DataFrame(data=data, index=results.algorithm)
 
     def get_prob_heavy_precip_detection_results(
-        self, name: Optional[str] = None, include_baselines: bool = True
+        self,
+        name: Optional[str] = None,
+        include_baselines: bool = True,
+        baselines: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """
         Get scalar results from probabilistic heavy precipitation detection
@@ -1854,7 +1888,11 @@ class Evaluator:
         results["algorithm"] = (("algorithm",), [name])
 
         if include_baselines:
-            results_b = baselines.load_baseline_results(self.base_sensor)
+            results_b = satrain.baselines.load_baseline_results(
+                self.base_sensor,
+                domain=self.domain,
+                baselines=baselines
+            )
             vars = list(results.variables.keys())
             results = xr.concat([results, results_b[vars]], dim="algorithm")
 
