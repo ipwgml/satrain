@@ -25,7 +25,7 @@ dependencies = [
   "netCDF4<1.7",
   "h5netcdf",
   "hdf5plugin",
-  "jupyter-book",
+  "jupyter-book<2",
   "matplotlib",
   "requests-cache",
   "rich",
