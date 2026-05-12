@@ -22,7 +22,7 @@ dependencies = [
   "click",
   "ipywidgets",
   "numpy<2",
-  "netCDF4<1.7",
+  "netCDF4",
   "h5netcdf",
   "hdf5plugin",
   "jupyter-book<2",
