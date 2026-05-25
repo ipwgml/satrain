@@ -5,6 +5,7 @@ satrain.cli
 Provides a command-line interface (CLI) for managing the satrain configuration and
 downloading data.
 """
+from importlib.metadata import version
 import logging
 from pathlib import Path
 from typing import Any, Dict, List
@@ -12,6 +13,7 @@ from typing import Any, Dict, List
 import click
 import rich
 from rich.table import Table
+import xarray as xr
 
 from satrain.config import (
     show,
@@ -25,7 +27,46 @@ import satrain.logging
 LOGGER = logging.getLogger(__name__)
 
 
+def print_version() -> str:
+    """
+    Print software and data versions of SatRain.
+    """
+    code_version = version("satrain")
+    data_version = None
+    for base_sensor in ["gmi", "atms"]:
+        for geometry in ["on_swath", "gridded"]:
+            for split in ["training", "validation", "testing"]:
+                files = satrain.data.get_local_files(
+                    "satrain",
+                    base_sensor,
+                    geometry,
+                    split=split
+                )
+            local_files = []
+            for name, paths in files.items():
+                if 0 < len(paths):
+                    local_files = paths
+                    break
+
+            if 0 < len(local_files):
+                path = local_files[0]
+                with xr.open_dataset(path) as data:
+                    ver = data.attrs.get("version", "1.0")
+                    if data_version is None:
+                        data_version = ver
+                    elif data_version != ver:
+                        LOGGER.warning(
+                            "Encountered local data with inconsistent "
+                            " versions ('%s' and '%s'). It is recommended "
+                            "that you re-download the dataset."
+                        )
+    if data_version is None:
+        return f"{code_version}"
+    return f"{code_version} (local data version: {data_version})"
+
+
 @click.group
+@click.version_option(print_version())
 def satrain():
     """Command line interface for the 'satrain' package."""
 

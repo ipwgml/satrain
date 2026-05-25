@@ -730,7 +730,7 @@ def cli(
         for inpt in inputs:
             if inpt not in ALL_INPUTS + ["target"]:
                 LOGGER.error(
-                    f"The input 'inpt' is currently not supported. Currently supported inputs"
+                    f"The input '{inpt}' is currently not supported. Currently supported inputs"
                     f" are {ALL_INPUTS}."
                 )
                 return 1
