@@ -158,13 +158,13 @@ class InputConfig(ABC):
             return Geo(**kwargs)
         elif name.lower() == "seviri":
             return Seviri(**kwargs)
-        elif name.lower() == "seviri_t":
+        elif name.lower() in ("seviri_t", "sevirit"):
             return SeviriT(**kwargs)
-        elif name.lower() == "geo_t":
+        elif name.lower() in ("geo_t", "geot"):
             return GeoT(**kwargs)
-        elif name.lower() == "geo_ir":
+        elif name.lower() in ("geo_ir", "geoir"):
             return GeoIR(**kwargs)
-        elif name.lower() == "geo_ir_t":
+        elif name.lower() in ("geo_ir_t", "geoirt"):
             return GeoIRT(**kwargs)
         raise RuntimeError(
             f"Provided retrieval input name '{name}' is not known."

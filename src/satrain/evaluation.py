@@ -610,16 +610,34 @@ def evaluate_scene(
 
         surface_precip_ref = target_config.load_reference_precip(target_data)
         invalid_mask = target_config.get_mask(target_data)
-        valid_mask = (
-            (pixel_inds.data >= 0)
-            * np.isfinite(results.surface_precip.data)
-            * ~invalid_mask
-        )
-        surface_precip_ref = target_data.surface_precip
-        surface_precip_ref.data[~valid_mask] = np.nan
 
-        for metric in precip_quantification_metrics:
-            metric.update(results.surface_precip.data, surface_precip_ref.data)
+        if "surface_precip" in results:
+            valid_pred = np.isfinite(results.surface_precip.data)
+        elif "probability_of_precip" in results:
+            valid_pred = np.isfinite(results.probability_of_precip.data)
+        elif "probability_of_heavy_precip" in results:
+            valid_pred = np.isfinite(results.probability_of_precip.data)
+        elif "precip_flag" in results:
+            valid_pred = (0 <= results.precip_flag.data)
+        elif "heavy_precip_flag" in results:
+            valid_pred = (0 <= results.heavy_precip_flag.data)
+        else:
+            raise ValueError(
+                "Did not find any of the expected results in the retrieval output."
+                "The retrieval callback should return an xarray Dataset with at least one "
+                "of the variables 'surface_precip', 'probability_of_precip', 'precip_flag', "
+                "'probability_of_heavy_precip', 'heavy_precip_flag'."
+            )
+
+        valid_mask = (
+            (pixel_inds.data >= 0) * valid_pred * ~invalid_mask
+        )
+
+        if "surface_precip" in results:
+            surface_precip_ref = target_data.surface_precip
+            surface_precip_ref.data[~valid_mask] = np.nan
+            for metric in precip_quantification_metrics:
+                metric.update(results.surface_precip.data, surface_precip_ref.data)
 
         precip_flag_ref = None
         if "precip_flag" in results:
