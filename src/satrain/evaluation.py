@@ -997,8 +997,8 @@ class Evaluator:
             self.geo_on_swath[index] if hasattr(self, "geo_on_swath") else None,
             self.geo_t_gridded[index] if hasattr(self, "geo_t_gridded") else None,
             self.geo_t_on_swath[index] if hasattr(self, "geo_t_on_swath") else None,
-            self.geo_ir_gridded[index] if hasattr(self, "geo_ir_t_gridded") else None,
-            self.geo_ir_on_swath[index] if hasattr(self, "geo_ir_t_on_swath") else None,
+            self.geo_ir_gridded[index] if hasattr(self, "geo_ir_gridded") else None,
+            self.geo_ir_on_swath[index] if hasattr(self, "geo_ir_on_swath") else None,
             self.geo_ir_t_gridded[index] if hasattr(self, "geo_ir_t_gridded") else None,
             self.geo_ir_t_on_swath[index] if hasattr(self, "geo_ir_t_on_swath") else None,
         )
@@ -1401,17 +1401,20 @@ class Evaluator:
         if not isinstance(retrieval_fn, dict):
             retrieval_fn = {"Retrieved": retrieval_fn}
 
-        results = {
-            name: self.evaluate_scene(
-                index=scene_index,
-                tile_size=tile_size,
-                overlap=overlap,
-                batch_size=batch_size,
-                retrieval_fn=ret_fn,
-                input_data_format=input_data_format,
-                track=False,
-            ) for name, ret_fn in retrieval_fn.items()
-        }
+        results = {}
+        for name, ret_fn in retrieval_fn.items():
+            if isinstance(ret_fn, xr.Dataset):
+                results[name] = ret_fn
+            else:
+                results[name] = self.evaluate_scene(
+                    index=scene_index,
+                    tile_size=tile_size,
+                    overlap=overlap,
+                    batch_size=batch_size,
+                    retrieval_fn=ret_fn,
+                    input_data_format=input_data_format,
+                    track=False,
+                )
 
         fname = self.target_gridded[scene_index].name
         median_time = fname.split("_")[-1][:-3]
