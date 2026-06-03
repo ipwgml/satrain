@@ -721,15 +721,17 @@ class SpectralCoherence(QuantificationMetric):
         return results
 
 
-class Histogram(QuantificationMetric):
+class Distribution(QuantificationMetric):
     """
     Calculates a 2D histogram or retrieved and reference precipitation.
     """
 
     def __init__(
             self,
-            bins: np.ndarray
+            bins: Optional[np.ndarray] = None
     ):
+        if bins is None:
+            bins = np.logspace(-3, 3, 201)
         self.bins = bins
         n_bins = bins.size - 1
         super().__init__(
@@ -762,12 +764,24 @@ class Histogram(QuantificationMetric):
             An xarray.Dataset containing a single, scalar variable 'mse' representing
             the MSE calculated over all results passed to this metric object.
         """
+        d_bins = np.diff(self.bins)
+        p_ret = self.counts.sum(0)
+        p_ret = p_ret / p_ret.sum() / d_bins
+        p_targ = self.counts.sum(0)
+        p_targ = p_targ / p_targ.sum() / d_bins
+
+        valid = 0 < p_targ
+        kl_div = np.sum(p_ret[valid] * np.log(p_ret[valid] / p_targ[valid]))
+
+
         hist = xr.Dataset({
-            "bins": (("bins",), self.bins),
-            "counts": (("y", "x"), self.counts)
+            "surface_precip_bins": (("bins",), self.bins),
+            "joint_distribution": (("target", "retrieved"), self.counts),
+            "kullback_leibler_divergence": kl_div
         })
-        hist.counts.attrs["full_name"] = "2D Histogram"
-        hist.counts.attrs["unit"] = ""
+        hist.joint_distribution.attrs["full_name"] = "Joint Distribution"
+        hist.joint_distribution.attrs["unit"] = ""
+
         return hist
 
 

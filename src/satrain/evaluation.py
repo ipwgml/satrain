@@ -757,6 +757,7 @@ class Evaluator:
             satrain.metrics.SMAPE(),
             satrain.metrics.CorrelationCoef(),
             satrain.metrics.SpectralCoherence(window_size=80),
+            satrain.metrics.Distribution(bins=np.logspace(-3, 3, 201)),
         ]
         self._precip_detection_metrics = [
             satrain.metrics.POD(),

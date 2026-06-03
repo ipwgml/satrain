@@ -20,6 +20,7 @@ from satrain.metrics import (
     SMAPE,
     CorrelationCoef,
     SpectralCoherence,
+    Distribution,
     FAR,
     POD,
     HSS,
@@ -328,6 +329,27 @@ def test_spectral_coherence():
     closest_scale = result.scales.data[np.where(result.scales > 8)[0][-1]]
     assert 8 < result.effective_resolution.data
     assert result.effective_resolution.data < closest_scale
+
+
+def test_histogram():
+    """
+    Evaluate tracking of precipitation distribution and ensure that for identical
+    samples the KL-Divergence is 0 and the joint distribution only contains counts
+    on the diagonal.
+    """
+    dist = Distribution()
+    x = np.random.uniform(-3, 3, 10_000)
+    y = x
+    dist.update(x, y)
+    res = dist.compute()
+
+    # Ensure Kullback-Leibler Divergence is 0
+    assert np.isclose(res.kullback_leibler_divergence.data, 0.0)
+    scatter = res.joint_distribution.data
+
+    # Ensure scatter plot only contains entries on diagonal
+    rows, cols = np.where(scatter)
+    assert (np.array(rows) == np.array(cols)).all()
 
 
 def evaluate_always(metric):
