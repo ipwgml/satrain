@@ -40,6 +40,7 @@ import warnings
 import numpy as np
 from scipy.ndimage import binary_erosion
 from scipy.fftpack import dctn
+from scipy.special import xlogy
 import xarray as xr
 
 
@@ -54,6 +55,28 @@ def get_manager() -> Manager:
     if _MANAGER is None:
         _MANAGER = Manager()
     return _MANAGER
+
+
+def coarsen_2d_sum(dist: np.ndarray, factors: Tuple[int, int]) -> np.ndarray:
+    """
+    Downsample 2D histgram using aggregation.
+
+    Args:
+        dist: A 2D np.ndarray containing a 2D histogram.
+        factors: A tuple containing the coarsening factors to apply along
+            the first and second dimension.
+
+    Return:
+        The dowsampled 2D histogram.
+    """
+    fy, fx = factors
+    ny, nx = dist.shape
+
+    ny_trim = (ny // fy) * fy
+    nx_trim = (nx // fx) * fx
+    dist = dist[:ny_trim, :nx_trim]
+
+    return dist.reshape(ny_trim // fy, fy, nx_trim // fx, fx).sum(axis=(1, 3))
 
 
 class Metric:
@@ -505,7 +528,18 @@ class CorrelationCoef(QuantificationMetric):
             y2_mean = self.y2_sum / self.counts
             y_sigma = np.sqrt(y2_mean - y_mean**2)
             xy_mean = self.xy_sum / self.counts
-            corr = (xy_mean - x_mean * y_mean) / (x_sigma * y_sigma)
+            
+            # Handle edge case where both variables have zero variance (perfect correlation)  
+            denominator = x_sigma * y_sigma
+            if np.isclose(denominator, 0.0, atol=1e-15):
+                # If both have zero variance, they have perfect correlation if same mean
+                if np.isclose(x_mean, y_mean, atol=1e-15):
+                    corr = np.array([1.0])  # Perfect positive correlation
+                else:
+                    corr = np.array([np.nan])  # Undefined correlation
+            else:
+                numerator = xy_mean - x_mean * y_mean
+                corr = numerator / denominator
 
         corr = xr.Dataset({"correlation_coef": corr[0]})
         corr.correlation_coef.attrs["full_name"] = "Correlation coeff."
@@ -758,29 +792,45 @@ class Distribution(QuantificationMetric):
 
     def compute(self) -> xr.Dataset:
         """
-        Calculate the MSE for all results passed to this metric object.
+        Calculate the joint and marginal distribution as well as KL divergence.
 
         Return:
-            An xarray.Dataset containing a single, scalar variable 'mse' representing
-            the MSE calculated over all results passed to this metric object.
+            An xarray.Dataset containing a the joint distribution ('joint_distribution'),
+            the marginal distributions ('retrieved_distribution' and 'target_distribution'),
+            and the KL divergence for the retrieved precipitation rates.
         """
-        d_bins = np.diff(self.bins)
-        p_ret = self.counts.sum(0)
-        p_ret = p_ret / p_ret.sum() / d_bins
-        p_targ = self.counts.sum(0)
-        p_targ = p_targ / p_targ.sum() / d_bins
+        bins = np.array(self.bins).copy()
 
-        valid = 0 < p_targ
-        kl_div = np.sum(p_ret[valid] * np.log(p_ret[valid] / p_targ[valid]))
+        dist = coarsen_2d_sum(np.array(self.counts.data).copy(), (10, 10))
+        retrieved_dist = dist.sum(0)
+        p_ret = retrieved_dist / retrieved_dist.sum()
+        target_dist = dist.sum(1)
+        p_targ = target_dist / target_dist.sum()
+        valid = (0 < p_targ) * (0 < p_ret)
+        kl_div = np.sum(
+            xlogy(p_targ[valid], p_targ[valid]) -
+            xlogy(p_targ[valid], p_ret[valid])
+        )
 
+        retrieved_dist = np.array(self.counts.data).sum(0)
+        target_dist = np.array(self.counts.data).sum(1)
 
         hist = xr.Dataset({
             "surface_precip_bins": (("bins",), self.bins),
+            "retrieved": (("retrieved",), 0.5 * (bins[1:] + bins[:-1])),
+            "target": (("target",), 0.5 * (bins[1:] + bins[:-1])),
             "joint_distribution": (("target", "retrieved"), self.counts),
+            "retrieved_distribution": (("retrieved",), retrieved_dist),
+            "target_distribution": (("target",), target_dist),
             "kullback_leibler_divergence": kl_div
         })
         hist.joint_distribution.attrs["full_name"] = "Joint Distribution"
-        hist.joint_distribution.attrs["unit"] = ""
+        hist.joint_distribution.attrs["unit"] = r"(mm\ h^{-1})^{-2}"
+        hist.retrieved_distribution.attrs["full_name"] = "Distribution of retrieved precipitation rates."
+        hist.retrieved_distribution.attrs["unit"] = r"(mm h^{-1})^{-1}"
+        hist.target_distribution.attrs["full_name"] = "Distribution of target precipitation rates."
+        hist.target_distribution.attrs["unit"] = r"(mm h^{-1})^{-1}"
+        hist.kullback_leibler_divergence.attrs["full_name"] = "Kullback-Leibler Divergence"
 
         return hist
 
