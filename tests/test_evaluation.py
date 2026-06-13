@@ -491,13 +491,13 @@ def test_process_untiled(input_data_fixture, request):
         """
         inputs.append(input_data)
         results = input_data[["obs_gmi"]].copy(deep=True)
-        lons = input_data["longitude"].data
-        lats = input_data["latitude"].data
+        lons = input_data["longitude"].data.copy()
+        lats = input_data["latitude"].data.copy()
         if lons.ndim == 1:
-            lons, lats = np.meshgrid(lons, lats)
+            lats, lons = np.meshgrid(lats, lons, indexing='ij')
 
-        lons_rounded = (lons - np.round(lons)) > 0
-        lats_rounded = (lats - np.round(lats)) > 0
+        lons_rounded = 0 < (lons - lons.round())
+        lats_rounded = 0 < (lats - lats.round())
 
         results = xr.Dataset(
             {
@@ -544,7 +544,7 @@ def test_process_untiled(input_data_fixture, request):
     lons_ref = input_data.longitude.data
     lats_ref = input_data.latitude.data
     if lons_ref.ndim == 1:
-        lons_ref, lats_ref = np.meshgrid(lons_ref, lats_ref)
+        lats_ref, lons_ref = np.meshgrid(lats_ref, lons_ref, indexing='ij')
 
     assert np.isclose(lons, lons_ref, rtol=1e-3).all()
     assert np.isclose(lats, lats_ref, rtol=1e-3).all()
@@ -796,3 +796,73 @@ def test_evaluate(geometry, satrain_gmi_testing, tmp_path):
     assert len(files) > 0
 
     results = evaluator.get_results()
+
+
+def test_stats_property():
+    """
+    Test that the stats property loads the correct statistics file for the evaluator's 
+    base sensor and domain, and that it is properly cached.
+    """
+    # Test with gmi/austria combination
+    evaluator_gmi = Evaluator(
+        base_sensor='gmi', 
+        geometry='gridded', 
+        domain='austria', 
+        download=False
+    )
+    
+    # First access should load the data
+    stats1 = evaluator_gmi.stats
+    assert isinstance(stats1, xr.Dataset)
+    
+    # Check that it loaded the right sensor and domain
+    assert stats1.sensor.item() == 'gmi'
+    assert stats1.domain.item() == 'austria'
+    
+    # Check expected variables are present
+    expected_vars = ['n_pixels', 'n_raining_pixels', 'rain_fraction', 
+                    'mean_precip', 'raining_mean', 'max_precip', 'file_index']
+    for var in expected_vars:
+        assert var in stats1.variables
+    
+    # Check that the data has the expected structure
+    assert 'file_index' in stats1.dims
+    assert stats1.file_index.size > 0  # Should have some data
+    
+    # Second access should return the same cached object
+    stats2 = evaluator_gmi.stats
+    assert stats1 is stats2  # Should be exactly the same object due to caching
+    
+    # Test with different sensor/domain combination
+    evaluator_atms = Evaluator(
+        base_sensor='atms',
+        geometry='gridded', 
+        domain='conus',
+        download=False
+    )
+    
+    stats_atms = evaluator_atms.stats
+    assert stats_atms.sensor.item() == 'atms'
+    assert stats_atms.domain.item() == 'conus'
+    
+    # Should be different from the gmi stats
+    assert stats_atms is not stats1
+
+
+def test_stats_property_file_not_found():
+    """
+    Test that the stats property raises appropriate error for non-existent sensor/domain combination.
+    """
+    # Use a valid domain but invalid sensor to test the file not found case
+    evaluator = Evaluator(
+        base_sensor='nonexistent', 
+        geometry='gridded', 
+        domain='austria',  # Valid domain 
+        download=False
+    )
+    
+    with pytest.raises(FileNotFoundError) as exc_info:
+        _ = evaluator.stats
+    
+    assert "Surface precipitation statistics file not found" in str(exc_info.value)
+    assert "surface_precip_stats_nonexistent_austria.nc" in str(exc_info.value)

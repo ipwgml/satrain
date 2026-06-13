@@ -25,6 +25,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from copy import copy
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 import logging
 from math import trunc, ceil
 from pathlib import Path
@@ -1561,6 +1562,38 @@ class Evaluator:
             ax.legend(handles=handles, labels=labels, ncol=2, loc="center")
 
         return fig
+
+    @cached_property
+    def stats(self) -> xr.Dataset:
+        """
+        Load surface precipitation statistics for this evaluator's base sensor and domain.
+        
+        Returns:
+            An xarray.Dataset containing precipitation statistics for the evaluator's sensor and domain.
+        """
+        # Get the path to the package files directory
+        package_files_dir = Path(__file__).parent / "files"
+        
+        # Construct the expected filename for this evaluator's sensor and domain
+        expected_filename = f"surface_precip_stats_{self.base_sensor}_{self.domain}.nc"
+        stats_file_path = package_files_dir / expected_filename
+        
+        if not stats_file_path.exists():
+            raise FileNotFoundError(
+                f"Surface precipitation statistics file not found: {stats_file_path}. "
+                f"Available files: {list(package_files_dir.glob('surface_precip_stats*.nc'))}"
+            )
+        
+        # Load the dataset for this specific sensor and domain
+        stats = xr.open_dataset(stats_file_path, engine="h5netcdf")
+        
+        # Add metadata coordinates
+        stats = stats.assign_coords(
+            sensor=self.base_sensor,
+            domain=self.domain
+        )
+        
+        return stats
 
     def get_precip_quantification_results(
             self,

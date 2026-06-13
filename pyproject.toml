@@ -49,6 +49,6 @@ satrain = "satrain.cli:satrain"
 include-package-data = true
 
 [tool.setuptools.package-data]
-"satrain" = ["files/*.json", "files/*.json.gz", "files/*.rc", "files/stats/*.nc", "files/*.mplstyle"]
+"satrain" = ["files/*.json", "files/*.json.gz", "files/*.rc", "files/stats/*.nc", "files/*.nc", "files/*.mplstyle"]
 
 [tool.setuptools_scm]
