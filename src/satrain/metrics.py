@@ -57,28 +57,6 @@ def get_manager() -> Manager:
     return _MANAGER
 
 
-def coarsen_2d_sum(dist: np.ndarray, factors: Tuple[int, int]) -> np.ndarray:
-    """
-    Downsample 2D histgram using aggregation.
-
-    Args:
-        dist: A 2D np.ndarray containing a 2D histogram.
-        factors: A tuple containing the coarsening factors to apply along
-            the first and second dimension.
-
-    Return:
-        The dowsampled 2D histogram.
-    """
-    fy, fx = factors
-    ny, nx = dist.shape
-
-    ny_trim = (ny // fy) * fy
-    nx_trim = (nx // fx) * fx
-    dist = dist[:ny_trim, :nx_trim]
-
-    return dist.reshape(ny_trim // fy, fy, nx_trim // fx, fx).sum(axis=(1, 3))
-
-
 class Metric:
     """
     Base class for metrics that manages shared data arrays and can be used to manage the
@@ -803,7 +781,7 @@ class Distribution(QuantificationMetric):
         """
         bins = np.array(self.bins).copy()
 
-        dist = coarsen_2d_sum(np.array(self.counts.data).copy(), (10, 10))
+        dist = np.array(self.counts.data).copy()
         retrieved_dist = dist.sum(0)
         p_ret = retrieved_dist / retrieved_dist.sum()
         target_dist = dist.sum(1)
