@@ -765,7 +765,9 @@ class Distribution(QuantificationMetric):
             bins: Optional[np.ndarray] = None
     ):
         if bins is None:
-            bins = np.logspace(-3, 3, 201)
+            bins = np.concatenate(
+                [np.array([0.0]), np.logspace(-1, 3, 41)],
+            )
         self.bins = bins
         n_bins = bins.size - 1
         super().__init__(
