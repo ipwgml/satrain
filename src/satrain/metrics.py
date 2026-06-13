@@ -1169,10 +1169,10 @@ class CRPS(ProbabilisticQuantificationMetric):
 
     def compute(self) -> xr.Dataset:
         """
-        Calculate the bias for all results passed to this metric object.
+        Calculate the CRPS for all results passed to this metric object.
 
         Return:
-            An xarray.Dataset containing a single, scalar variable 'bias' or 'bias_{name}'.
+            An xarray.Dataset containing a single, scalar variable 'crps'.
 
         """
         with np.errstate(invalid='ignore'):
