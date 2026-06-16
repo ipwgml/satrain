@@ -796,10 +796,10 @@ class Distribution(QuantificationMetric):
         target_dist = np.array(self.counts.data).sum(1)
 
         hist = xr.Dataset({
-            "surface_precip_bins": (("bins",), self.bins),
+            "surface_precip_bins": (("bins",), bins),
             "retrieved": (("retrieved",), 0.5 * (bins[1:] + bins[:-1])),
             "target": (("target",), 0.5 * (bins[1:] + bins[:-1])),
-            "joint_distribution": (("target", "retrieved"), self.counts),
+            "joint_distribution": (("target", "retrieved"), dist),
             "retrieved_distribution": (("retrieved",), retrieved_dist),
             "target_distribution": (("target",), target_dist),
             "kullback_leibler_divergence": kl_div
