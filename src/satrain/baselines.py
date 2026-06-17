@@ -63,7 +63,7 @@ ALL_METRICS = QPE_METRICS | DETECTION_METRICS | HEAVY_DETECTION_METRICS
 
 
 FLIPPED_METRICS = [
-    "correlcation_coef",
+    "correlation_coef",
     "pod",
     "pod_heavy",
     "hss",
