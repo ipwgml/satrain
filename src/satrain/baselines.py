@@ -17,6 +17,7 @@ from satrain.definitions import BASE_SENSORS, DOMAINS
 BASELINES_GMI = {
     "era5": "ERA5",
     "gprof_v07": "GPROF V07 (GMI)",
+    "gprof_v08": "GPROF V08 (GMI)",
     "persiann_ccs": "PERSIANN CCS",
     "persiann_pdir_now": "PERSIANN PDIR-Now",
     "punet": "PU-Net",
@@ -27,6 +28,7 @@ BASELINES_GMI = {
 BASELINES_ATMS = {
     "era5": "ERA5",
     "gprof_v07": "GPROF V07 (ATMS)",
+    "gprof_v08": "GPROF V08 (ATMS)",
     "persiann_ccs": "PERSIANN CCS",
     "persiann_pdir_now": "PERSIANN PDIR-Now",
     "punet": "PU-Net",
