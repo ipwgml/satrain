@@ -951,7 +951,7 @@ class HSS(DetectionMetric):
             self.n_tp += (positive * true).astype(np.int64).sum()
             self.n_fp += (positive * ~true).astype(np.int64).sum()
             self.n_tn += (~positive * ~true).astype(np.int64).sum()
-            self.n_fn += (positive * ~true).astype(np.int64).sum()
+            self.n_fn += (~positive * true).astype(np.int64).sum()
 
     def compute(self, name: Optional[str] = None):
         """
