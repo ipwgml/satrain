@@ -131,6 +131,7 @@ class Metric:
                 shm = shm[0]
                 if isinstance(shm, str):
                     shm = shared_memory.SharedMemory(shm)
+                shm.close()
                 shm.unlink()
 
 
@@ -802,7 +803,6 @@ class Distribution(QuantificationMetric):
             "joint_distribution": (("target", "retrieved"), dist),
             "retrieved_distribution": (("retrieved",), retrieved_dist),
             "target_distribution": (("target",), target_dist),
-            "kullback_leibler_divergence": kl_div
         })
         hist.joint_distribution.attrs["full_name"] = "Joint Distribution"
         hist.joint_distribution.attrs["unit"] = r"(mm\ h^{-1})^{-2}"
@@ -810,7 +810,6 @@ class Distribution(QuantificationMetric):
         hist.retrieved_distribution.attrs["unit"] = r"(mm h^{-1})^{-1}"
         hist.target_distribution.attrs["full_name"] = "Distribution of target precipitation rates."
         hist.target_distribution.attrs["unit"] = r"(mm h^{-1})^{-1}"
-        hist.kullback_leibler_divergence.attrs["full_name"] = "Kullback-Leibler Divergence"
 
         return hist
 
@@ -951,7 +950,7 @@ class HSS(DetectionMetric):
             self.n_tp += (positive * true).astype(np.int64).sum()
             self.n_fp += (positive * ~true).astype(np.int64).sum()
             self.n_tn += (~positive * ~true).astype(np.int64).sum()
-            self.n_fn += (positive * ~true).astype(np.int64).sum()
+            self.n_fn += (~positive * true).astype(np.int64).sum()
 
     def compute(self, name: Optional[str] = None):
         """

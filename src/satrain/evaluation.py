@@ -617,7 +617,7 @@ def evaluate_scene(
         elif "probability_of_precip" in results:
             valid_pred = np.isfinite(results.probability_of_precip.data)
         elif "probability_of_heavy_precip" in results:
-            valid_pred = np.isfinite(results.probability_of_precip.data)
+            valid_pred = np.isfinite(results.probability_of_heavy_precip.data)
         elif "precip_flag" in results:
             valid_pred = (0 <= results.precip_flag.data)
         elif "heavy_precip_flag" in results:
@@ -805,7 +805,8 @@ class Evaluator:
             geometry=self.geometry,
             split="testing",
             domain=self.domain,
-            data_path=data_path
+            data_path=data_path,
+            check_consistency=True,
         )
         for name, source_files in files.items():
             if len(source_files) > 0:
@@ -818,7 +819,8 @@ class Evaluator:
                 geometry=geometry,
                 split="testing",
                 domain=self.domain,
-                data_path=data_path
+                data_path=data_path,
+                check_consistency=True,
             )
             setattr(self, "target_" + geometry, files["target"])
 
@@ -856,14 +858,14 @@ class Evaluator:
         return self._precip_detection_metrics
 
     @precip_detection_metrics.setter
-    def set_detection_metric(self, metrics: List[str | Metric]):
+    def precip_detection_metrics(self, metrics: List[str | Metric]):
         """
         Setter for the 'detection_metrics' property.
         """
         parsed = []
         for metric in metrics:
             if isinstance(metric, str):
-                metric_class = getattr(metrics, metric, None)
+                metric_class = getattr(satrain.metrics, metric, None)
                 if metric_class is None or type(metric_class) != type:
                     raise ValueError(
                         f"The metric '{metric}' is not known. Please refer to the"
@@ -872,7 +874,7 @@ class Evaluator:
                     )
                 metric = metric_class()
             parsed.append(metric)
-        self._precip_detection_metrics = metrics
+        self._precip_detection_metrics = parsed
 
     @property
     def prob_precip_detection_metrics(self):
@@ -882,14 +884,14 @@ class Evaluator:
         return self._prob_precip_detection_metrics
 
     @prob_precip_detection_metrics.setter
-    def set_prob_precip_detection_metrics(self, metrics: List[str | Metric]):
+    def prob_precip_detection_metrics(self, metrics: List[str | Metric]):
         """
         Setter for the 'probabilistic_detection_metrics' property.
         """
         parsed = []
         for metric in metrics:
             if isinstance(metric, str):
-                metric_class = getattr(metrics, metric, None)
+                metric_class = getattr(satrain.metrics, metric, None)
                 if metric_class is None or type(metric_class) != type:
                     raise ValueError(
                         f"The metric '{metric}' is not known. Please refer to the"
@@ -898,7 +900,7 @@ class Evaluator:
                     )
                 metric = metric_class()
             parsed.append(metric)
-        self._prob_precip_detection_metrics = metrics
+        self._prob_precip_detection_metrics = parsed
 
     @property
     def heavy_precip_detection_metrics(self):
@@ -908,14 +910,14 @@ class Evaluator:
         return self._heavy_precip_detection_metrics
 
     @heavy_precip_detection_metrics.setter
-    def set_heavy_precip_detection_metrics(self, metrics: List[str | Metric]):
+    def heavy_precip_detection_metrics(self, metrics: List[str | Metric]):
         """
         Setter for the 'heavy_precip_detection_metrics' property.
         """
         parsed = []
         for metric in metrics:
             if isinstance(metric, str):
-                metric_class = getattr(metrics, metric, None)
+                metric_class = getattr(satrain.metrics, metric, None)
                 if metric_class is None or type(metric_class) != type:
                     raise ValueError(
                         f"The metric '{metric}' is not known. Please refer to the"
@@ -924,7 +926,7 @@ class Evaluator:
                     )
                 metric = metric_class()
             parsed.append(metric)
-        self._heavy_precip_detection_metrics = metrics
+        self._heavy_precip_detection_metrics = parsed
 
     @property
     def prob_heavy_precip_detection_metrics(self):
@@ -934,15 +936,15 @@ class Evaluator:
         """
         return self._prob_heavy_precip_detection_metrics
 
-    @prob_precip_detection_metrics.setter
-    def set_prob_heavy_precip_detection_metrics(self, metrics: List[str | Metric]):
+    @prob_heavy_precip_detection_metrics.setter
+    def prob_heavy_precip_detection_metrics(self, metrics: List[str | Metric]):
         """
         Setter for the 'prob_heavy_precip_detection_metrics' property.
         """
         parsed = []
         for metric in metrics:
             if isinstance(metric, str):
-                metric_class = getattr(metrics, metric, None)
+                metric_class = getattr(satrain.metrics, metric, None)
                 if metric_class is None or type(metric_class) != type:
                     raise ValueError(
                         f"The metric '{metric}' is not known. Please refer to the"
@@ -951,7 +953,7 @@ class Evaluator:
                     )
                 metric = metric_class()
             parsed.append(metric)
-        self._prob_heavy_precip_detection_metrics = metrics
+        self._prob_heavy_precip_detection_metrics = parsed
 
     def __repr__(self):
         return (
@@ -1050,7 +1052,7 @@ class Evaluator:
 
         spatial_dims = ["latitude", "longitude"]
         if self.geometry == "on_swath":
-            spatial_dims = ["scan", "pixels"]
+            spatial_dims = ["scan", "pixel"]
 
         input_data_tiler = DatasetTiler(
             input_data, tile_size=tile_size, overlap=overlap, spatial_dims=spatial_dims
@@ -1546,7 +1548,7 @@ class Evaluator:
                 mae = np.abs(sp_ret[valid] - sp_ref[valid]).mean()
                 bias = 100.0 * (sp_ret[valid] - sp_ref[valid]).mean() / sp_ref[valid].mean()
                 metrics = f"Bias: {bias:.2f} %\nCorr.: {corr:.2f}\nMSE: {mse:.2f}"
-                ax.text(0.05, 0.1, metrics, transform=ax.transAxes, ha='left', va='center', fontsize=12, color='deeppink')
+                ax.text(0.05, 0.05, metrics, transform=ax.transAxes, ha='left', va='bottom', fontsize=12, color='deeppink')
 
 
         fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"), y=1.0)
@@ -1728,7 +1730,7 @@ class Evaluator:
         n_metrics = len(metrics)
 
         n_row = ceil(n_metrics / n_col)
-        fig = plt.figure(figsize=(n_col * 4, n_row * 4))
+        fig = plt.figure(figsize=(n_col * 6, n_row * 4))
         gs = GridSpec(n_row, n_col, wspace=0.3)
 
         last_row = ceil(len(metrics) / n_col)

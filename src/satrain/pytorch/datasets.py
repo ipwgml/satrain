@@ -346,7 +346,7 @@ def apply(tensors: Any, transform: torch.Tensor) -> torch.Tensor:
     if isinstance(tensors, tuple):
         return tuple([apply(tensor, transform) for tensor in tensors])
     if isinstance(tensors, list):
-        return [apply(tensor, transform) for tensors in tensors]
+        return [apply(tensor, transform) for tensor in tensors]
     if isinstance(tensors, dict):
         return {key: apply(tensor, transform) for key, tensor in tensors.items()}
     if isinstance(tensors, torch.Tensor):
@@ -560,7 +560,7 @@ class SatRainSpatial:
             shear = self.rng.uniform(-30.0, 30.0)
             kwargs = {"angle": degrees, "scale": scale, "shear": shear, "translate": [0.0, 0.0]}
             input_transforms = [
-                lambda x: v2.functional.affine(x, **kwargs, fill=fill)
+                lambda x, _fill=fill: v2.functional.affine(x, **kwargs, fill=_fill)
                 for inpt, fill in zip(self.retrieval_input, self.fill_values)
             ]
             target_transform = lambda tensor: v2.functional.affine(tensor[None], **kwargs, fill=torch.nan)[0]

@@ -130,7 +130,7 @@ class TargetConfig:
 
             if self.max_gcf is not None:
                 gcf = data["gauge_correction_factor"].data
-                valid *= gcf <= self.min_gcf
+                valid *= gcf <= self.max_gcf
         return ~valid
 
     def to_dict(self) -> Dict[str, Any]:

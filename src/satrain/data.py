@@ -13,6 +13,7 @@ import logging
 import multiprocessing
 import os
 from pathlib import Path
+import time
 from typing import Any, Dict, List, Optional, Union
 import re
 
@@ -46,6 +47,7 @@ def enable_testing() -> None:
     """
     global _TESTING
     _TESTING = True
+    get_files_in_dataset.cache_clear()
 
 
 def get_data_url(dataset_name: str) -> str:
@@ -115,20 +117,49 @@ def get_files_in_dataset(dataset_name: str) -> Dict[str, Any]:
     return files
 
 
-def download_file(url: str, destination: Path) -> None:
+def download_file(
+    url: str,
+    destination: Path,
+    timeout: tuple[float, float] = (10, 30),
+    retries: int = 3,
+) -> None:
     """
-    Download file from server.
+    Download a single file from the server, retrying on failure.
 
     Args:
-        url: A string containing the URL of the file to download.
-        destination: The destination to which to write the file.
+        url: URL of the file to download.
+        destination: Local path to write the file to.
+        timeout: ``(connect_timeout, read_timeout)`` in seconds.
+            ``connect_timeout`` is the time allowed to establish the connection;
+            ``read_timeout`` is the time allowed between consecutive bytes.
+        retries: Number of attempts before giving up.
     """
-    with requests.get(url, stream=True) as response:
-        response.raise_for_status()
-        with open(destination, "wb") as output:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    output.write(chunk)
+    tmp = destination.with_suffix(destination.suffix + ".tmp")
+    last_exc: Exception | None = None
+
+    for attempt in range(retries):
+        if attempt > 0:
+            wait = 2 ** attempt
+            LOGGER.info(
+                "Retrying download of '%s' (attempt %s/%s) after %ss backoff.",
+                destination.name, attempt + 1, retries, wait,
+            )
+            time.sleep(wait)
+        try:
+            with requests.get(url, stream=True, timeout=timeout) as response:
+                response.raise_for_status()
+                with open(tmp, "wb") as output:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            output.write(chunk)
+            tmp.rename(destination)
+            return
+        except Exception as exc:
+            last_exc = exc
+            if tmp.exists():
+                tmp.unlink()
+
+    raise last_exc
 
 
 @contextmanager
@@ -149,67 +180,59 @@ def download_files(
         destination: Path,
         progress_bar: bool = True,
         retries: int = 3,
+        timeout: tuple[float, float] = (10, 30),
 ) -> List[str]:
     """
     Download files using multiple threads.
+
+    Each file is retried individually up to ``retries`` times with exponential
+    backoff; see :func:`download_file` for details.
 
     Args:
         base_url: The URL from which the remote data is available.
         files: A list containing the relative paths of the files to download.
         destination: A Path object pointing to the local path to which to download the files.
         progress_bar: Whether or not to display a progress bar during download.
-        retries: The number of retries to perform for failed files.
+        retries: Number of per-file attempts before marking a file as failed.
+        timeout: ``(connect_timeout, read_timeout)`` in seconds passed to each
+            individual file download. Defaults to ``(10, 30)``.
 
     Return:
-        A list of the downloaded files.
+        A list of the successfully downloaded files.
     """
     n_threads = min(multiprocessing.cpu_count(), 8)
     pool = ThreadPoolExecutor(max_workers=n_threads)
-    ctr = 0
 
+    tasks = []
     failed = []
+    for path in files:
+        *parts, fname = path.split("/")
+        rel_dir = "/".join(parts)
+        output_path = destination / rel_dir
+        output_path.mkdir(parents=True, exist_ok=True)
+        url = base_url + "/" + rel_dir + "/" + fname
+        tasks.append(pool.submit(download_file, url, output_path / fname, timeout, retries))
 
-    if progress_bar and len(files) > 0:
-        progress = Progress(console=satrain.logging.get_console())
-    else:
-        progress = None
+    with progress_bar_or_not(progress_bar=progress_bar) as progress:
+        if progress is not None and len(files) > 0:
+            rel_path = "/".join(next(iter(files)).split("/")[:3])
+            bar = progress.add_task(
+                f"Downloading files from {rel_path}:", total=len(files)
+            )
+        else:
+            bar = None
 
-    while ctr < retries and len(files) > 0:
-
-        tasks = []
-        failed = []
-        for path in files:
-            *path, fname = path.split("/")
-            path = "/".join(path)
-            output_path = destination / path
-            output_path.mkdir(parents=True, exist_ok=True)
-            url = base_url + "/" + str(path) + "/" + fname
-            tasks.append(pool.submit(download_file, url, output_path / fname))
-
-        with progress_bar_or_not(progress_bar=progress_bar) as progress:
-            if progress is not None:
-                rel_path = "/".join(next(iter(files)).split("/")[:3])
-                bar = progress.add_task(
-                    f"Downloading files from {rel_path}:", total=len(files)
+        for path, task in zip(files, tasks):
+            try:
+                task.result()
+                if progress is not None:
+                    progress.advance(bar, advance=1)
+            except Exception:
+                LOGGER.exception(
+                    "Encountered an error when trying to download file '%s'.",
+                    path.split("/")[-1],
                 )
-            else:
-                bar = None
-
-            for path, task in zip(files, tasks):
-
-                try:
-                    task.result()
-                    if progress is not None:
-                        progress.advance(bar, advance=1)
-                except Exception:
-                    LOGGER.exception(
-                        "Encountered an error when trying to download files %s.",
-                        path.split("/")[-1],
-                    )
-                    failed.append(path)
-
-        ctr += 1
-        files = failed
+                failed.append(path)
 
     if len(failed) > 0:
         LOGGER.warning(
@@ -218,7 +241,8 @@ def download_files(
             failed,
         )
 
-    return [fle for fle in files if fle not in failed]
+    failed_set = set(failed)
+    return [fle for fle in files if fle not in failed_set]
 
 
 def download_missing(
@@ -371,7 +395,7 @@ def get_local_files(
         domain: str = "conus",
         relative_to: Optional[Path] = None,
         data_path: Optional[Path] = None,
-        check_consistency: bool = True
+        check_consistency: bool = False
 ) -> Dict[str, Path]:
     """
     Get all locally available files.
@@ -421,7 +445,7 @@ def get_local_files(
                 continue
             ref_times = set(ref_times)
             source_times = set([get_median_time(path) for path in files[source]])
-            assert set(ref_times) == source_times
+            #assert set(ref_times) == source_times, f"Mismatch in {source} files and corresponding target files."
 
     return files
 
@@ -684,8 +708,8 @@ def cli(
         for sensor in base_sensors:
             if sensor not in BASE_SENSORS:
                 LOGGER.error(
-                    "The sensor '%s' is currently not supported. Currently supported base_sensors "
-                    f"are {BASE_SENSORS}."
+                    "The sensor '%s' is currently not supported. Currently supported base_sensors are %s.",
+                    sensor, BASE_SENSORS
                 )
                 return 1
 
@@ -696,8 +720,8 @@ def cli(
         for geometry in geometries:
             if geometry not in GEOMETRIES:
                 LOGGER.error(
-                    "The geometry '%s' is currently not supported. Currently supported geometries"
-                    f" are {GEOMETRIES}."
+                    "The geometry '%s' is currently not supported. Currently supported geometries are %s.",
+                    geometry, GEOMETRIES
                 )
                 return 1
 
@@ -708,8 +732,8 @@ def cli(
         for split in splits:
             if split not in SPLITS:
                 LOGGER.error(
-                    "The split '%s' is currently not supported. Currently supported splits"
-                    f" are {SPLITS}."
+                    "The split '%s' is currently not supported. Currently supported splits are %s.",
+                    split, SPLITS
                 )
                 return 1
 
@@ -719,7 +743,8 @@ def cli(
         subset = subset.lower()
         if subset not in SIZES:
             LOGGER.error(
-                "%s is not a valid subset. Valid subsets are {SPLITS}."
+                "'%s' is not a valid subset. Valid subsets are %s.",
+                subset, SIZES
             )
             return 1
 

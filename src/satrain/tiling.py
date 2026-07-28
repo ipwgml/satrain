@@ -276,7 +276,7 @@ class DatasetTiler:
 
         ds_row = self.tile_size[0] / res.shape[-2]
         ds_col = self.tile_size[1] / res.shape[-1]
-        shape = res.shape[:-2] + (int(self.m / ds_row), int(self.n / ds_col))
+        shape = res.shape[:-2] + (int(self.n_rows / ds_row), int(self.n_cols / ds_col))
         return np.zeros(shape, dtype=res.dtype)
 
     def assemble_tile(self, row_index, col_index, results, results_t):
@@ -309,31 +309,27 @@ class DatasetTiler:
         ds_row = self.tile_size[0] // results_t.shape[-2]
         ds_col = self.tile_size[1] // results_t.shape[-1]
 
-        i_start = self.i_start[row_index]
+        i_start = self.row_starts[row_index]
         i_end = i_start + self.tile_size[0]
         row_slice = slice(i_start // ds_row, i_end // ds_row)
-        j_start = self.j_start[col_index]
+        j_start = self.col_starts[col_index]
         j_end = j_start + self.tile_size[1]
-        if self.N == 1:
-            j_end = min(self.n, j_end)
+        if self.n_cols_tiled == 1:
+            j_end = min(self.n_cols, j_end)
 
-        # modulo self.n in case self.wrap_columns is True
-        col_slice = np.arange(j_start // ds_col, j_end // ds_col) % (self.n // ds_col)
+        col_slice = np.arange(j_start // ds_col, j_end // ds_col) % (self.n_cols // ds_col)
 
         wgts = self.get_weights(row_index, col_index, like=results_t)[
             ..., ::ds_row, ::ds_col
         ]
 
-        if self.i_pad is not None:
-            i_pad = slice(self.i_pad[0] // ds_row, -self.i_pad[-1] // ds_row)
+        if self.row_pad is not None:
+            i_pad = slice(self.row_pad[0] // ds_row, -self.row_pad[-1] // ds_row)
         else:
             i_pad = slice(0, None)
 
-        if self.j_pad is not None:
-            if self.wrap_columns:
-                j_pad = slice(0, -sum(self.j_pad))
-            else:
-                j_pad = slice(self.j_pad[0] // ds_col, -self.j_pad[-1] // ds_col)
+        if self.col_pad is not None:
+            j_pad = slice(self.col_pad[0] // ds_col, -self.col_pad[-1] // ds_col)
         else:
             j_pad = slice(0, None)
 
@@ -345,8 +341,8 @@ class DatasetTiler:
 
         results = None
 
-        for row_ind in range(self.M):
-            for col_ind in range(self.N):
+        for row_ind in range(self.n_rows_tiled):
+            for col_ind in range(self.n_cols_tiled):
 
                 results_t = yield self.get_tile(row_ind, col_ind)
                 if results_t is None:
