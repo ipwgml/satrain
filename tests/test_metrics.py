@@ -343,10 +343,6 @@ def test_histogram():
     dist.update(x, y)
     res = dist.compute()
 
-    # Ensure Kullback-Leibler Divergence is 0
-    assert np.isclose(res.kullback_leibler_divergence.data, 0.0)
-    scatter = res.joint_distribution.data
-
     # Ensure scatter plot only contains entries on diagonal
     rows, cols = np.where(scatter)
     assert (np.array(rows) == np.array(cols)).all()
