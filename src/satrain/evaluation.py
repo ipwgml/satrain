@@ -1363,7 +1363,9 @@ class Evaluator:
         contour_legend: bool = True,
         include_metrics: bool = False,
         n_rows: int = 1,
-        bounds: Optional[Tuple[float, float, float, float]] = None
+        bounds: Optional[Tuple[float, float, float, float]] = None,
+        figsize: Optional[Tuple[float, float]] = None,
+        metric_pos: Tuple[float, float] = (0.05, 0.10),
     ) -> "plt.Figure":
         """
         Plot retrieval results for a given retrieval scene.
@@ -1385,6 +1387,8 @@ class Evaluator:
             bounds: An optional tuple ``(lon_min, lat_min, lon_max ,lat_max)`` defining the
                 longitude and latitude coordinates to use a x-axis and y-axis limits,
                 respectively.
+            figsize: Optional tuple defining the figure size.
+            metric_pos: The lower left corner of metrics text box.
 
         Return:
             The matplotlib.Figure object containing the plot.
@@ -1470,7 +1474,9 @@ class Evaluator:
 
         crs = ccrs.PlateCarree()
         n_cols = ceil((len(results) + 1) / n_rows)
-        fig = plt.figure(figsize=(n_cols * ax_width + 1, 4 * n_rows + 1))
+        if figsize is None:
+            figsize=(n_cols * ax_width + 1, 4 * n_rows + 1)
+        fig = plt.figure(figsize=figsize)
         gs = GridSpec(
             n_rows + 1,
             n_cols + 1,
@@ -1548,10 +1554,10 @@ class Evaluator:
                 mae = np.abs(sp_ret[valid] - sp_ref[valid]).mean()
                 bias = 100.0 * (sp_ret[valid] - sp_ref[valid]).mean() / sp_ref[valid].mean()
                 metrics = f"Bias: {bias:.2f} %\nCorr.: {corr:.2f}\nMSE: {mse:.2f}"
-                ax.text(0.05, 0.05, metrics, transform=ax.transAxes, ha='left', va='bottom', fontsize=12, color='deeppink')
+                ax.text(*metric_pos, metrics, transform=ax.transAxes, ha='left', va='bottom', fontsize=12, color='deeppink')
 
 
-        fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"), y=1.0)
+        fig.suptitle(date.strftime("%Y-%m-%d %H:%M:%S"), y=0.94)
 
         cax = fig.add_subplot(gs[:-1, -1])
         plt.colorbar(m, cax=cax, label="Surface precipitation [mm h$^{-1}$]")
