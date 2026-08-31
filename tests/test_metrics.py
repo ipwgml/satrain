@@ -17,6 +17,7 @@ from satrain.metrics import (
     Metric,
     MAE,
     MSE,
+    NRMSE,
     SMAPE,
     CorrelationCoef,
     SpectralCoherence,
@@ -206,6 +207,25 @@ def test_mse():
     assert np.isclose(result.mse.data, 102, atol=1e-1)
 
 
+def test_nrmse():
+    """
+    Ensure that the calculated NRMSE is close to 102.
+    """
+    n_jobs = 1024
+    pool = ProcessPoolExecutor(max_workers=8)
+
+    nrmse = NRMSE()
+    tasks = []
+    for _ in range(n_jobs):
+        tasks.append(pool.submit(evaluate_normal_preds, nrmse))
+
+    for task in tasks:
+        task.result()
+
+    result = nrmse.compute()
+    assert np.isclose(result.nrmse.data, 100 * np.sqrt(102) / 1.0, rtol=1e-1)
+
+
 def test_correlation_coef_indep():
     """
     Ensure that the calculated correlation coefficient is close to 0 for
@@ -342,6 +362,7 @@ def test_histogram():
     y = x
     dist.update(x, y)
     res = dist.compute()
+    scatter = res.joint_distribution.data
 
     # Ensure scatter plot only contains entries on diagonal
     rows, cols = np.where(scatter)

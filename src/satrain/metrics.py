@@ -438,6 +438,68 @@ class MSE(QuantificationMetric):
         return mse
 
 
+class NRMSE(QuantificationMetric):
+    r"""
+    The normalized mean-squared error (NRMSE) calculated as the mean value of the squared difference between
+    prediction and target values normalized by the standard deviation of the reference data.
+
+    .. math::
+
+      \\text{NRMSE} = 100 \cdot \frac{\sqrt{(\\mathbf{E}\{y_\\text{pred} - y_\\text{target}\})^2}}{\sigma_\\text{target}}
+
+    where mean is calculated over all results passed to the 'compute' method for
+    which the target values are finite.
+    """
+
+    def __init__(self):
+        super().__init__(
+            buffers={
+                "tot_sq_error": ((1,), np.float64),
+                "target_sum": ((1,), np.float64),
+                "squared_target_sum": ((1,), np.float64),
+                "counts": ((1,), np.int64),
+            }
+        )
+
+    def update(self, prediction: np.ndarray, target: np.ndarray) -> None:
+        """
+        Update metric values with given prediction.
+
+        Args:
+             prediction: An np.ndarray containing the predicted values.
+             target: An np.ndarray containing the reference values.
+        """
+        pred = prediction
+        valid = np.isfinite(target)
+        pred = pred[valid]
+        target = target[valid]
+
+        with self.lock:
+            self.tot_sq_error += ((pred - target) ** 2).sum()
+            self.target_sum += target.sum()
+            self.squared_target_sum += (target ** 2).sum()
+            self.counts += valid.sum()
+
+    def compute(self) -> xr.Dataset:
+        """
+        Calculate the MSE for all results passed to this metric object.
+
+        Return:
+            An xarray.Dataset containing a single, scalar variable 'mse' representing
+            the MSE calculated over all results passed to this metric object.
+        """
+        with np.errstate(invalid='ignore'):
+            mse = self.tot_sq_error[0] / self.counts[0]
+            t_mean = self.target_sum[0] / self.counts[0]
+            t2_mean = self.squared_target_sum[0] / self.counts[0]
+            sigma_t = np.sqrt(t2_mean - t_mean ** 2)
+            nrmse = 100.0 * np.sqrt(mse) / sigma_t
+        res = xr.Dataset({"nrmse": nrmse})
+        res.nrmse.attrs["full_name"] = "NRMSE"
+        res.nrmse.attrs["unit"] = "%"
+        return res
+
+
 class CorrelationCoef(QuantificationMetric):
     r"""
     The linear correlation coefficient between predictions and target values.
